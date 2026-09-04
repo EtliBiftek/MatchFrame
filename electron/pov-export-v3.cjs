@@ -3,6 +3,7 @@ const { execFile } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { pathToFileURL } = require('node:url');
 
 const VRF_VERSION = '20.0';
 const VRF_URL = `https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/${VRF_VERSION}/cli-windows-x64.zip`;
@@ -220,6 +221,8 @@ function installProtocol(protocol) {
       const token = url.pathname.split('/').filter(Boolean)[0];
       const file = served.get(token);
       if (!file || !fs.existsSync(file)) return new Response('Not found', { status: 404 });
+      const fileResponse = await net.fetch(pathToFileURL(file).href);
+      if (fileResponse.ok) return fileResponse;
       const bytes = await fs.promises.readFile(file);
       return new Response(bytes, { headers: { 'Content-Type': 'model/gltf-binary' } });
     } catch (error) {
