@@ -3,6 +3,14 @@
   let fireBySteam = new Map();
   let utilityOwners = { smokes: [], infernos: [], hes: [], flashes: [] };
 
+  const PLAYER_COLORS = {
+    blue: '#5d79ae',
+    green: '#04b462',
+    yellow: '#d5e800',
+    orange: '#d58b00',
+    purple: '#b25de5'
+  };
+
   function pushEvent(index, steamid, event) {
     if (!steamid) return;
     if (!index.has(steamid)) index.set(steamid, []);
@@ -108,6 +116,34 @@
     return window.matchframeRadarFast?.worldToScreen?.(player.X, player.Y) || null;
   }
 
+  function playerGameColor(player) {
+    const key = String(player?.player_color || '').toLowerCase();
+    return PLAYER_COLORS[key] || '#9a9aa2';
+  }
+
+  function drawPlayerColors(frame) {
+    if (viewMode !== 'tactical' || !frame || !window.matchframeRadarFast) return;
+    const selectedSteam = String(selectedPlayer?.steamid || '');
+    for (const player of frame.players || []) {
+      if (!Number.isFinite(player.X) || !Number.isFinite(player.Y)) continue;
+      const point = window.matchframeRadarFast.worldToScreen(player.X, player.Y);
+      if (!point) continue;
+      const [x, y] = point;
+      const alive = player.is_alive && player.health > 0;
+      const selected = selectedSteam && String(player.steamid || '') === selectedSteam;
+      ctx.save();
+      ctx.globalAlpha = alive ? 1 : .3;
+      ctx.beginPath();
+      ctx.arc(x, y, selected ? 6.2 : 5.2, 0, Math.PI * 2);
+      ctx.fillStyle = playerGameColor(player);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.72)';
+      ctx.lineWidth = 1.15;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
   function drawDamageEffects(frame) {
     if (viewMode !== 'tactical' || !frame || !window.matchframeRadarFast) return;
     const life = tickRate() * .48;
@@ -199,6 +235,7 @@
     previousDraw();
     if (viewMode !== 'tactical') return;
     const frame = nearestFrame(currentTick);
+    drawPlayerColors(frame);
     drawDamageEffects(frame);
     drawFireEffects(frame);
     drawUtilityOwners();
