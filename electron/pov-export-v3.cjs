@@ -8,7 +8,7 @@ const { pathToFileURL } = require('node:url');
 const VRF_VERSION = '20.0';
 const VRF_URL = `https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/${VRF_VERSION}/cli-windows-x64.zip`;
 const VRF_SHA256 = 'd32ab327b8bbb42a2528866afb03bb582bdb779d0005488da32b90292afd3ff5';
-const POV_CACHE_VERSION = 'v3';
+const POV_CACHE_VERSION = 'v4';
 const jobs = new Map();
 const served = new Map();
 
@@ -150,10 +150,134 @@ async function chooseExport(glbs, map) {
   return stats.sort((a, b) => b.size - a.size)[0]?.file || null;
 }
 
+function paletteForMaterial(name, index) {
+  const key = String(name || '').toLowerCase();
+  const rules = [
+    [/(brick|terracotta|clay|roof|tile)/, [0.55, 0.28, 0.17, 1]],
+    [/(wood|timber|door|crate|barrel)/, [0.36, 0.24, 0.14, 1]],
+    [/(grass|leaf|foliage|tree|plant|vine)/, [0.18, 0.31, 0.17, 1]],
+    [/(sand|dirt|soil|earth|ground)/, [0.47, 0.38, 0.25, 1]],
+    [/(asphalt|road|street|pavement)/, [0.22, 0.23, 0.24, 1]],
+    [/(metal|pipe|rail|steel|iron|grate)/, [0.28, 0.31, 0.33, 1]],
+    [/(glass|window)/, [0.38, 0.52, 0.59, 1]],
+    [/(plaster|stucco|concrete|stone|wall)/, [0.58, 0.54, 0.46, 1]],
+    [/(paint.*red|red.*paint)/, [0.52, 0.18, 0.15, 1]],
+    [/(paint.*blue|blue.*paint)/, [0.23, 0.34, 0.48, 1]]
+  ];
+  for (const [regex, color] of rules) if (regex.test(key)) return color;
+  const palette = [
+    [0.58, 0.50, 0.39, 1],
+    [0.43, 0.39, 0.34, 1],
+    [0.64, 0.57, 0.45, 1],
+    [0.39, 0.42, 0.40, 1],
+    [0.50, 0.35, 0.27, 1],
+    [0.36, 0.39, 0.44, 1],
+    [0.52, 0.47, 0.38, 1]
+  ];
+  let hash = 2166136261;
+  const text = key || `material-${index}`;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return palette[(hash >>> 0) % palette.length];
+}
+
+function stripMaterialTextures(material, index) {
+  if (!material || typeof material !== 'object') return;
+  const pbr = material.pbrMetallicRoughness || (material.pbrMetallicRoughness = {});
+  delete pbr.baseColorTexture;
+  delete pbr.metallicRoughnessTexture;
+  pbr.baseColorFactor = paletteForMaterial(material.name, index);
+  pbr.metallicFactor = 0;
+  pbr.roughnessFactor = 1;
+  delete material.normalTexture;
+  delete material.occlusionTexture;
+  delete material.emissiveTexture;
+  delete material.extensions;
+  material.alphaMode = 'OPAQUE';
+  material.doubleSided = true;
+  material.emissiveFactor = [0, 0, 0];
+}
+
+function sanitizeGlbBuffer(input) {
+  if (!Buffer.isBuffer(input) || input.length < 20) throw new Error('GLB dosyası geçersiz.');
+  if (input.readUInt32LE(0) !== 0x46546c67 || input.readUInt32LE(4) !== 2) throw new Error('Yalnızca glTF 2.0 GLB destekleniyor.');
+
+  const chunks = [];
+  let offset = 12;
+  let jsonIndex = -1;
+  while (offset + 8 <= input.length) {
+    const length = input.readUInt32LE(offset);
+    const type = input.readUInt32LE(offset + 4);
+    const start = offset + 8;
+    const end = start + length;
+    if (end > input.length) throw new Error('GLB chunk sınırları bozuk.');
+    chunks.push({ type, data: Buffer.from(input.subarray(start, end)) });
+    if (type === 0x4e4f534a) jsonIndex = chunks.length - 1;
+    offset = end;
+  }
+  if (jsonIndex < 0) throw new Error('GLB JSON chunk bulunamadı.');
+
+  const jsonText = chunks[jsonIndex].data.toString('utf8').replace(/[\u0000\s]+$/g, '');
+  const gltf = JSON.parse(jsonText);
+  delete gltf.images;
+  delete gltf.textures;
+  delete gltf.samplers;
+  if (Array.isArray(gltf.extensionsUsed)) {
+    gltf.extensionsUsed = gltf.extensionsUsed.filter((x) => !/^KHR_(?:texture_transform|materials_)/i.test(String(x)));
+    if (!gltf.extensionsUsed.length) delete gltf.extensionsUsed;
+  }
+  if (Array.isArray(gltf.extensionsRequired)) {
+    gltf.extensionsRequired = gltf.extensionsRequired.filter((x) => !/^KHR_(?:texture_transform|materials_)/i.test(String(x)));
+    if (!gltf.extensionsRequired.length) delete gltf.extensionsRequired;
+  }
+  for (let i = 0; i < (gltf.materials || []).length; i++) stripMaterialTextures(gltf.materials[i], i);
+  for (const mesh of gltf.meshes || []) {
+    for (const primitive of mesh.primitives || []) {
+      if (primitive.attributes) delete primitive.attributes.COLOR_0;
+    }
+  }
+  gltf.asset = gltf.asset || { version: '2.0' };
+  gltf.asset.extras = { ...(gltf.asset.extras || {}), matchframeSafeColor: true, cacheVersion: POV_CACHE_VERSION };
+
+  let jsonBuffer = Buffer.from(JSON.stringify(gltf), 'utf8');
+  const jsonPad = (4 - (jsonBuffer.length % 4)) % 4;
+  if (jsonPad) jsonBuffer = Buffer.concat([jsonBuffer, Buffer.alloc(jsonPad, 0x20)]);
+  chunks[jsonIndex].data = jsonBuffer;
+
+  const total = 12 + chunks.reduce((sum, chunk) => sum + 8 + chunk.data.length, 0);
+  const output = Buffer.allocUnsafe(total);
+  output.writeUInt32LE(0x46546c67, 0);
+  output.writeUInt32LE(2, 4);
+  output.writeUInt32LE(total, 8);
+  let outOffset = 12;
+  for (const chunk of chunks) {
+    output.writeUInt32LE(chunk.data.length, outOffset);
+    output.writeUInt32LE(chunk.type, outOffset + 4);
+    chunk.data.copy(output, outOffset + 8);
+    outOffset += 8 + chunk.data.length;
+  }
+  return output;
+}
+
+async function sanitizeGlb(source, destination) {
+  const raw = await fs.promises.readFile(source);
+  const safe = sanitizeGlbBuffer(raw);
+  await fs.promises.writeFile(destination, safe);
+}
+
 function registerAsset(file) {
   const token = crypto.randomUUID();
   served.set(token, file);
   return { token, url: `matchframe-pov://asset/${token}/${encodeURIComponent(path.basename(file))}` };
+}
+
+async function fileIsFresh(file, source) {
+  try {
+    const [stat, sourceStat] = await Promise.all([fs.promises.stat(file), fs.promises.stat(source)]);
+    return stat.size > 256 * 1024 && stat.mtimeMs >= sourceStat.mtimeMs;
+  } catch (_) { return false; }
 }
 
 async function prepare(mapName) {
@@ -169,34 +293,35 @@ async function prepare(mapName) {
     const cacheRoot = path.join(app.getPath('userData'), 'offline-pov', map);
     await fs.promises.mkdir(cacheRoot, { recursive: true });
     const cachedGlb = path.join(cacheRoot, `${map}.${POV_CACHE_VERSION}.glb`);
-    let valid = false;
-    try {
-      const [glbStat, vpkStat] = await Promise.all([fs.promises.stat(cachedGlb), fs.promises.stat(mapVpk)]);
-      valid = glbStat.size > 256 * 1024 && glbStat.mtimeMs >= vpkStat.mtimeMs;
-    } catch (_) {}
 
-    if (!valid) {
-      const cli = await ensureVrf();
-      const exportDir = path.join(cacheRoot, `export-${POV_CACHE_VERSION}`);
-      await fs.promises.rm(exportDir, { recursive: true, force: true });
-      await fs.promises.mkdir(exportDir, { recursive: true });
-      const internal = `maps/${map}.vmap_c`;
-      await execFileAsync(cli, [
-        '-i', mapVpk,
-        '-o', exportDir,
-        '-d',
-        '--vpk_filepath', internal,
-        '--gltf_export_format', 'glb',
-        '--gltf_export_materials',
-        '--gltf_textures_adapt',
-        '--game', gameInfo
-      ], { timeout: 15 * 60 * 1000 });
-      const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
-      const chosen = await chooseExport(glbs, map);
-      if (!chosen) throw new Error('Haritanın GLB çıktısı bulunamadı.');
-      await fs.promises.copyFile(chosen, cachedGlb);
+    if (!(await fileIsFresh(cachedGlb, mapVpk))) {
+      let sourceGlb = path.join(cacheRoot, `${map}.v3.glb`);
+      if (!(await fileIsFresh(sourceGlb, mapVpk))) {
+        const cli = await ensureVrf();
+        const exportDir = path.join(cacheRoot, `export-${POV_CACHE_VERSION}`);
+        await fs.promises.rm(exportDir, { recursive: true, force: true });
+        await fs.promises.mkdir(exportDir, { recursive: true });
+        const internal = `maps/${map}.vmap_c`;
+        await execFileAsync(cli, [
+          '-i', mapVpk,
+          '-o', exportDir,
+          '-d',
+          '--vpk_filepath', internal,
+          '--gltf_export_format', 'glb',
+          '--gltf_export_materials',
+          '--gltf_textures_adapt',
+          '--game', gameInfo
+        ], { timeout: 15 * 60 * 1000 });
+        const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
+        sourceGlb = await chooseExport(glbs, map);
+        if (!sourceGlb) throw new Error('Haritanın GLB çıktısı bulunamadı.');
+      }
+      await sanitizeGlb(sourceGlb, cachedGlb);
       const stat = await fs.promises.stat(cachedGlb);
-      if (stat.size <= 256 * 1024) throw new Error('Harita GLB çıktısı eksik görünüyor.');
+      if (stat.size <= 256 * 1024) {
+        await fs.promises.rm(cachedGlb, { force: true });
+        throw new Error('Güvenli POV GLB çıktısı eksik görünüyor.');
+      }
     }
 
     const asset = registerAsset(cachedGlb);
@@ -205,7 +330,7 @@ async function prepare(mapName) {
       map,
       url: asset.url,
       sourceScale: 0.0254,
-      renderer: `Source 2 Viewer ${VRF_VERSION} exact-map export`,
+      renderer: `Source 2 Viewer ${VRF_VERSION} safe-colour export`,
       cacheVersion: POV_CACHE_VERSION,
       cs2RunningRequired: false
     };
@@ -224,7 +349,7 @@ function installProtocol(protocol) {
       const fileResponse = await net.fetch(pathToFileURL(file).href);
       if (fileResponse.ok) return fileResponse;
       const bytes = await fs.promises.readFile(file);
-      return new Response(bytes, { headers: { 'Content-Type': 'model/gltf-binary' } });
+      return new Response(bytes, { headers: { 'Content-Type': 'model/gltf-binary', 'Cache-Control': 'no-store' } });
     } catch (error) {
       return new Response(String(error?.message || error), { status: 500 });
     }
