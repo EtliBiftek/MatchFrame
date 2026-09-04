@@ -54,18 +54,35 @@
     previousLoadDemo(result);
   };
 
+  function roundEndTickFor(tick) {
+    const rounds = demo?.roundMeta || [];
+    if (!rounds.length) return Infinity;
+    let current = null;
+    for (const round of rounds) {
+      const start = Number(round?.startTick ?? 0);
+      const end = Number(round?.endTick ?? Infinity);
+      if (tick >= start && tick <= end) return end;
+      if (tick >= start) current = round;
+      else break;
+    }
+    const fallback = Number(current?.endTick);
+    return Number.isFinite(fallback) ? fallback : Infinity;
+  }
+
   function plantEndTick(plant, index) {
     const nextPlant = bombIndex.plants[index + 1]?.tick ?? Infinity;
     const defuse = bombIndex.defuses.find((item) => item.tick >= plant.tick && item.tick < nextPlant)?.tick ?? Infinity;
     const explosion = bombIndex.explosions.find((item) => item.tick >= plant.tick && item.tick < nextPlant)?.tick ?? Infinity;
-    return Math.min(nextPlant, defuse, explosion);
+    const roundEnd = roundEndTickFor(plant.tick);
+    return Math.min(nextPlant, defuse, explosion, roundEnd);
   }
 
   function dropEndTick(drop) {
     const pickup = bombIndex.pickups.find((item) => item.tick > drop.tick)?.tick ?? Infinity;
     const plant = bombIndex.plants.find((item) => item.tick > drop.tick)?.tick ?? Infinity;
     const nextDrop = bombIndex.drops.find((item) => item.tick > drop.tick)?.tick ?? Infinity;
-    return Math.min(pickup, plant, nextDrop);
+    const roundEnd = roundEndTickFor(drop.tick);
+    return Math.min(pickup, plant, nextDrop, roundEnd);
   }
 
   function worldRadiusToPixels(radius) {
