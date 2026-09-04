@@ -1,11 +1,54 @@
 (() => {
   let damageBySteam = new Map();
   let fireBySteam = new Map();
+  let utilityOwners = { smokes: [], infernos: [], hes: [], flashes: [] };
 
   function pushEvent(index, steamid, event) {
     if (!steamid) return;
     if (!index.has(steamid)) index.set(steamid, []);
     index.get(steamid).push(event);
+  }
+
+  function eventTick(event) {
+    const tick = Number(event?.tick || 0);
+    return Number.isFinite(tick) ? tick : 0;
+  }
+
+  function eventName(event) {
+    return String(event?.user_name ?? event?.player_name ?? event?.thrower_name ?? event?.name ?? '').trim();
+  }
+
+  function eventPosition(event) {
+    const X = Number(event?.x ?? event?.X ?? event?.user_X ?? event?.player_X);
+    const Y = Number(event?.y ?? event?.Y ?? event?.user_Y ?? event?.player_Y);
+    const Z = Number(event?.z ?? event?.Z ?? event?.user_Z ?? event?.player_Z ?? 0);
+    return [X, Y, Z].every(Number.isFinite) ? { X, Y, Z } : null;
+  }
+
+  function entityId(event) {
+    return String(event?.entityid ?? event?.entity_id ?? event?.grenade_entity_id ?? '');
+  }
+
+  function pairLifecycle(starts, ends, fallbackSeconds) {
+    const endBuckets = new Map();
+    for (const event of ends || []) {
+      const id = entityId(event);
+      if (!id) continue;
+      if (!endBuckets.has(id)) endBuckets.set(id, []);
+      endBuckets.get(id).push(event);
+    }
+    for (const list of endBuckets.values()) list.sort((a, b) => eventTick(a) - eventTick(b));
+    return (starts || []).map((start) => {
+      const startTick = eventTick(start);
+      const id = entityId(start);
+      const end = (endBuckets.get(id) || []).find((candidate) => eventTick(candidate) > startTick);
+      return {
+        tick: startTick,
+        endTick: end ? eventTick(end) : startTick + 64 * fallbackSeconds,
+        name: eventName(start),
+        position: eventPosition(start)
+      };
+    }).filter((item) => item.position);
   }
 
   function buildCombatIndex(result) {
@@ -39,6 +82,14 @@
         });
       }
     }
+
+    const utility = result?.utility || {};
+    utilityOwners = {
+      smokes: pairLifecycle(utility.smokeStarts, utility.smokeEnds, 18),
+      infernos: pairLifecycle(utility.infernoStarts, utility.infernoEnds, 7),
+      hes: (utility.heDetonates || []).map((event) => ({ tick: eventTick(event), endTick: eventTick(event) + 64 * .8, name: eventName(event), position: eventPosition(event) })).filter((x) => x.position),
+      flashes: (utility.flashDetonates || []).map((event) => ({ tick: eventTick(event), endTick: eventTick(event) + 64 * 1.1, name: eventName(event), position: eventPosition(event) })).filter((x) => x.position)
+    };
   }
 
   function latestEvent(events, tick) {
@@ -111,6 +162,32 @@
     }
   }
 
+  function drawOwnerTag(item) {
+    if (!item?.name || currentTick < item.tick || currentTick > item.endTick) return;
+    const point = window.matchframeRadarFast?.worldToScreen?.(item.position.X, item.position.Y);
+    if (!point) return;
+    const [x, y] = point;
+    ctx.save();
+    ctx.font = '600 8px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const text = item.name;
+    const width = ctx.measureText(text).width + 8;
+    ctx.fillStyle = 'rgba(8,8,10,.82)';
+    ctx.fillRect(x - width / 2, y + 10, width, 13);
+    ctx.fillStyle = 'rgba(247,247,249,.96)';
+    ctx.fillText(text, x, y + 16.5);
+    ctx.restore();
+  }
+
+  function drawUtilityOwners() {
+    if (viewMode !== 'tactical' || !window.matchframeRadarFast) return;
+    for (const item of utilityOwners.smokes) drawOwnerTag(item);
+    for (const item of utilityOwners.infernos) drawOwnerTag(item);
+    for (const item of utilityOwners.hes) drawOwnerTag(item);
+    for (const item of utilityOwners.flashes) drawOwnerTag(item);
+  }
+
   const previousLoadDemo = loadDemo;
   loadDemo = function(result) {
     buildCombatIndex(result);
@@ -124,5 +201,6 @@
     const frame = nearestFrame(currentTick);
     drawDamageEffects(frame);
     drawFireEffects(frame);
+    drawUtilityOwners();
   };
 })();
