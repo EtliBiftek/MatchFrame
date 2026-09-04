@@ -1,6 +1,6 @@
 {
   "name": "matchframe",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "CS2 demo POV viewer, timeline workstation and match analysis desktop app",
   "main": "electron/main.cjs",
   "author": "EtliBiftek",
@@ -12,7 +12,9 @@
     "dist:dir": "electron-builder --dir --win --x64"
   },
   "dependencies": {
-    "@laihoe/demoparser2": "0.42.0"
+    "@laihoe/demoparser2": "0.42.0",
+    "babylonjs": "9.23.0",
+    "babylonjs-loaders": "9.23.0"
   },
   "devDependencies": {
     "electron": "44.2.0",
