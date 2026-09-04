@@ -56,11 +56,11 @@ electron.app.on('web-contents-created', (_event, contents) => {
 electron.protocol.registerSchemesAsPrivileged = () => {};
 require('./main.cjs');
 
-// v4 keeps exact competitive-map selection from v3, but strips GPU-heavy map textures and
-// converts material groups to lightweight colours before Babylon ever sees the GLB.
-const povV4 = require('./pov-export-v3.cjs');
+// v5 avoids Source2Viewer's heavy material/texture export path entirely. MatchFrame exports
+// geometry only, then assigns lightweight colours itself before Babylon loads the GLB.
+const povV5 = require('./pov-export-v5.cjs');
 electron.app.whenReady().then(() => {
-  povV4.installProtocol(electron.protocol);
+  povV5.installProtocol(electron.protocol);
   electron.ipcMain.removeHandler('pov:prepare');
-  electron.ipcMain.handle('pov:prepare', async (_event, mapName) => povV4.prepare(mapName));
+  electron.ipcMain.handle('pov:prepare', async (_event, mapName) => povV5.prepare(mapName));
 });
