@@ -13,6 +13,30 @@
     return [X, Y, Z].every(Number.isFinite) ? { X, Y, Z } : null;
   }
 
+  function eventActorName(event) {
+    return String(event?.user_name ?? event?.player_name ?? event?.name ?? '').trim();
+  }
+
+  function c4CarrierNameBefore(tick) {
+    const frames = demo?.frames || [];
+    if (!frames.length) return '';
+    let lo = 0, hi = frames.length - 1;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      if (Number(frames[mid]?.tick || 0) <= tick) lo = mid;
+      else hi = mid - 1;
+    }
+    for (let i = lo; i >= Math.max(0, lo - 16); i--) {
+      const carrier = (frames[i]?.players || []).find((player) => player?.has_c4 && player?.is_alive);
+      if (carrier?.name) return String(carrier.name);
+    }
+    return '';
+  }
+
+  function actorFor(item) {
+    return eventActorName(item?.event) || c4CarrierNameBefore(Number(item?.tick || 0));
+  }
+
   function buildBombIndex(result) {
     const bomb = result?.bomb || {};
     bombIndex = {
@@ -121,11 +145,12 @@
       ctx.fillRect(-size, -size, size * 2, size * 2);
       ctx.strokeRect(-size, -size, size * 2, size * 2);
       ctx.restore();
+      const actor = actorFor(drop);
       ctx.save();
       ctx.font = '8px Consolas, monospace';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255,191,180,.96)';
-      ctx.fillText('C4 YERDE', x, y - 14);
+      ctx.fillText(actor ? `C4 YERDE · ${actor}` : 'C4 YERDE', x, y - 14);
       ctx.restore();
     }
   }
@@ -144,11 +169,12 @@
       const pulse = .5 + .5 * Math.sin(performance.now() / 115);
       drawC4Symbol(x, y, pulse);
       const seconds = Math.max(0, (end - currentTick) / tickRate());
+      const actor = actorFor(plant);
       ctx.save();
       ctx.font = '8px Consolas, monospace';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255,218,211,.95)';
-      ctx.fillText(`C4 ${seconds.toFixed(seconds < 10 ? 1 : 0)}s`, x, y - 17);
+      ctx.fillText(`C4 ${seconds.toFixed(seconds < 10 ? 1 : 0)}s${actor ? ` · ${actor}` : ''}`, x, y - 17);
       ctx.restore();
     }
   }
@@ -199,11 +225,12 @@
       ctx.arc(x, y, radius * .55, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
+      const actor = actorFor(plant);
       ctx.save();
       ctx.font = 'bold 8px Consolas, monospace';
       ctx.textAlign = 'center';
       ctx.fillStyle = `rgba(255,196,181,${Math.max(0, 1 - t)})`;
-      ctx.fillText('C4 PATLAMA ALANI', x, y - Math.min(radius + 8, 58));
+      ctx.fillText(`C4 PATLAMA ALANI${actor ? ` · ${actor}` : ''}`, x, y - Math.min(radius + 8, 58));
       ctx.restore();
     }
   }
