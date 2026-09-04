@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: matchframe: https://raw.githubusercontent.com; media-src 'self' blob: file: matchframe:; connect-src 'self' matchframe:; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: matchframe: https://raw.githubusercontent.com; media-src 'self' blob: file: matchframe:; connect-src 'self' matchframe: matchframe-pov:; style-src 'self' 'unsafe-inline'; script-src 'self'" />
   <title>MatchFrame</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="titlebar">
-    <div class="brand"><span class="brand-mark">MF</span><span class="brand-name">MatchFrame</span><span class="version">0.4.4</span></div>
+    <div class="brand"><span class="brand-mark">MF</span><span class="brand-name">MatchFrame</span><span class="version">0.4.5</span></div>
     <div class="drag-region"></div>
     <div class="window-controls">
       <button id="minimize" aria-label="Küçült">—</button>
@@ -135,6 +135,7 @@
   <script src="landing.js"></script>
   <script src="runtime-v4.js"></script>
   <script src="pov-stability.js"></script>
+  <script src="pov-world.js"></script>
   <script src="radar-fast.js"></script>
   <script src="radar-combat.js"></script>
   <script src="equipment-panel.js"></script>
