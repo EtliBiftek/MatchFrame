@@ -8,17 +8,16 @@ const { pathToFileURL } = require('node:url');
 const VRF_VERSION = '20.0';
 const VRF_URL = `https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/${VRF_VERSION}/cli-windows-x64.zip`;
 const VRF_SHA256 = 'd32ab327b8bbb42a2528866afb03bb582bdb779d0005488da32b90292afd3ff5';
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const MIN_GLB_SIZE = 256 * 1024;
 const COPY_BUFFER_SIZE = 8 * 1024 * 1024;
 const JSON_CHUNK = 0x4e4f534a;
-const BIN_CHUNK = 0x004e4942;
 const jobs = new Map();
 const served = new Map();
 
 function execFileAsync(exe, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const timeout = Number(options.timeout || 180000);
+    const timeout = Number(options.timeout || 300000);
     const child = execFile(exe, args, {
       windowsHide: true,
       shell: false,
@@ -142,9 +141,7 @@ function steamLibraries() {
   for (const root of steamRoots()) {
     try {
       const text = fs.readFileSync(path.join(root, 'steamapps', 'libraryfolders.vdf'), 'utf8');
-      for (const match of text.matchAll(/"path"\s+"([^"]+)"/g)) {
-        libs.add(match[1].replace(/\\\\/g, '\\'));
-      }
+      for (const match of text.matchAll(/"path"\s+"([^"]+)"/g)) libs.add(match[1].replace(/\\\\/g, '\\'));
     } catch (_) {}
   }
   return [...libs];
@@ -156,26 +153,6 @@ function findCs2GameRoot() {
     if (fs.existsSync(path.join(candidate, 'gameinfo.gi'))) return candidate;
   }
   return null;
-}
-
-function badVariant(file) {
-  return /(?:wingman|2v2|_wm(?:\.|_|$)|short|duo)/i.test(file.replace(/\\/g, '/'));
-}
-
-async function chooseExport(glbs, map) {
-  const stats = await Promise.all(glbs.map(async (file) => ({
-    file,
-    base: path.basename(file).toLowerCase(),
-    rel: file.replace(/\\/g, '/').toLowerCase(),
-    size: (await fs.promises.stat(file)).size
-  })));
-  const exactName = `${map.toLowerCase()}.glb`;
-  const exact = stats.filter((x) => x.base === exactName && !badVariant(x.rel)).sort((a, b) => b.size - a.size);
-  if (exact.length) return exact[0].file;
-  const named = stats.filter((x) => x.base.startsWith(map.toLowerCase()) && !badVariant(x.rel)).sort((a, b) => b.size - a.size);
-  if (named.length) return named[0].file;
-  const normal = stats.filter((x) => !badVariant(x.rel)).sort((a, b) => b.size - a.size);
-  return normal[0]?.file || stats.sort((a, b) => b.size - a.size)[0]?.file || null;
 }
 
 function palette(name, index) {
@@ -225,21 +202,16 @@ async function writeExact(handle, buffer, position) {
 async function readGlbStructure(file) {
   const stat = await fs.promises.stat(file);
   if (stat.size < 20) throw new Error('GLB dosyası çok küçük.');
-
   const handle = await fs.promises.open(file, 'r');
   try {
     const header = Buffer.allocUnsafe(12);
     await readExact(handle, header, 0);
-    const magic = header.readUInt32LE(0);
-    const version = header.readUInt32LE(4);
+    if (header.readUInt32LE(0) !== 0x46546c67 || header.readUInt32LE(4) !== 2) throw new Error('Geçersiz glTF 2.0 GLB.');
     const declaredLength = header.readUInt32LE(8);
-    if (magic !== 0x46546c67 || version !== 2) throw new Error('Geçersiz glTF 2.0 GLB.');
     if (declaredLength > stat.size || declaredLength < 20) throw new Error('GLB uzunluğu geçersiz.');
-
     const chunks = [];
     let position = 12;
     let jsonChunk = null;
-    let binChunk = null;
     while (position + 8 <= declaredLength) {
       const chunkHeader = Buffer.allocUnsafe(8);
       await readExact(handle, chunkHeader, position);
@@ -250,17 +222,13 @@ async function readGlbStructure(file) {
       const chunk = { type, length, dataOffset };
       chunks.push(chunk);
       if (type === JSON_CHUNK && !jsonChunk) jsonChunk = chunk;
-      if (type === BIN_CHUNK && !binChunk) binChunk = chunk;
       position = dataOffset + length;
     }
-    if (!jsonChunk) throw new Error('GLB JSON chunk bulunamadı.');
-    if (jsonChunk.length > 128 * 1024 * 1024) throw new Error('GLB JSON chunk olağandışı büyük.');
-
+    if (!jsonChunk || jsonChunk.length > 128 * 1024 * 1024) throw new Error('GLB JSON chunk bulunamadı veya çok büyük.');
     const jsonBuffer = Buffer.allocUnsafe(jsonChunk.length);
     await readExact(handle, jsonBuffer, jsonChunk.dataOffset);
-    const jsonText = jsonBuffer.toString('utf8').replace(/[\u0000\s]+$/g, '');
-    const gltf = JSON.parse(jsonText);
-    return { stat, declaredLength, chunks, jsonChunk, binChunk, gltf };
+    const gltf = JSON.parse(jsonBuffer.toString('utf8').replace(/[\u0000\s]+$/g, ''));
+    return { stat, declaredLength, chunks, jsonChunk, gltf };
   } finally {
     await handle.close();
   }
@@ -273,8 +241,7 @@ async function isSafeGlb(file) {
     const { gltf } = await readGlbStructure(file);
     const hasGeometry = Array.isArray(gltf.meshes) && gltf.meshes.some((mesh) => Array.isArray(mesh.primitives) && mesh.primitives.length);
     const hasTextureRefs = Array.isArray(gltf.images) || Array.isArray(gltf.textures);
-    const markedSafe = Boolean(gltf.asset?.extras?.matchframeSafeColor);
-    return hasGeometry && !hasTextureRefs && (markedSafe || Array.isArray(gltf.materials));
+    return hasGeometry && !hasTextureRefs && Boolean(gltf.asset?.extras?.matchframeSafeColor);
   } catch (_) {
     return false;
   }
@@ -291,46 +258,8 @@ async function isUsableRawGlb(file) {
   }
 }
 
-function collectBufferViewRefs(value, out, skipImages = false, keyName = '') {
-  if (!value || typeof value !== 'object') return;
-  if (Array.isArray(value)) {
-    for (const item of value) collectBufferViewRefs(item, out, skipImages, keyName);
-    return;
-  }
-  for (const [key, child] of Object.entries(value)) {
-    if (skipImages && key === 'images') continue;
-    if (key === 'bufferView' && Number.isInteger(child)) out.add(child);
-    else collectBufferViewRefs(child, out, skipImages, key);
-  }
-}
-
-function remapBufferViewRefs(value, mapping) {
-  if (!value || typeof value !== 'object') return;
-  if (Array.isArray(value)) {
-    for (const item of value) remapBufferViewRefs(item, mapping);
-    return;
-  }
-  for (const key of Object.keys(value)) {
-    const child = value[key];
-    if (key === 'bufferView' && Number.isInteger(child)) {
-      if (mapping.has(child)) value[key] = mapping.get(child);
-      else delete value[key];
-    } else {
-      remapBufferViewRefs(child, mapping);
-    }
-  }
-}
-
 function sanitizeGeometryJson(gltf) {
   const oldMaterials = Array.isArray(gltf.materials) ? gltf.materials : [];
-  const imageBufferViews = new Set();
-  for (const image of gltf.images || []) {
-    if (Number.isInteger(image?.bufferView)) imageBufferViews.add(image.bufferView);
-  }
-  const nonImageRefs = new Set();
-  collectBufferViewRefs(gltf, nonImageRefs, true);
-  const removableImageViews = new Set([...imageBufferViews].filter((index) => !nonImageRefs.has(index)));
-
   delete gltf.images;
   delete gltf.textures;
   delete gltf.samplers;
@@ -347,21 +276,15 @@ function sanitizeGeometryJson(gltf) {
         delete primitive.attributes.TEXCOORD_0;
         delete primitive.attributes.TEXCOORD_1;
       }
-
       const oldMaterialName = Number.isInteger(primitive.material) ? oldMaterials[primitive.material]?.name : '';
-      const sourceName = oldMaterialName || meshName;
-      const color = palette(sourceName, primitiveIndex);
+      const color = palette(oldMaterialName || meshName, primitiveIndex);
       const colorKey = color.join(',');
       if (!materialByColor.has(colorKey)) {
         const index = gltf.materials.length;
         materialByColor.set(colorKey, index);
         gltf.materials.push({
           name: `mf-safe-${index}`,
-          pbrMetallicRoughness: {
-            baseColorFactor: color,
-            metallicFactor: 0,
-            roughnessFactor: 1
-          },
+          pbrMetallicRoughness: { baseColorFactor: color, metallicFactor: 0, roughnessFactor: 1 },
           alphaMode: 'OPAQUE',
           doubleSided: true
         });
@@ -381,85 +304,18 @@ function sanitizeGeometryJson(gltf) {
   }
 
   gltf.asset = gltf.asset || { version: '2.0' };
-  gltf.asset.extras = {
-    ...(gltf.asset.extras || {}),
-    matchframeSafeColor: true,
-    cacheVersion: CACHE_VERSION
-  };
-  return { gltf, removableImageViews };
-}
-
-function canCompactBin(gltf, structure, removableImageViews) {
-  if (!structure.binChunk || !removableImageViews.size) return false;
-  if (!Array.isArray(gltf.bufferViews) || !gltf.bufferViews.length) return false;
-  if (!Array.isArray(gltf.buffers) || gltf.buffers.length !== 1) return false;
-  if (gltf.bufferViews.some((view) => Number(view?.buffer || 0) !== 0)) return false;
-  if ((gltf.extensionsUsed || []).includes('EXT_meshopt_compression')) return false;
-  if (gltf.bufferViews.some((view) => view?.extensions?.EXT_meshopt_compression)) return false;
-  return true;
-}
-
-function buildBinCompaction(gltf, structure, removableImageViews) {
-  if (!canCompactBin(gltf, structure, removableImageViews)) return null;
-
-  const oldViews = gltf.bufferViews.map((view) => ({ ...view }));
-  const mapping = new Map();
-  const newViews = [];
-  const copyPlan = [];
-  let outputOffset = 0;
-
-  for (let oldIndex = 0; oldIndex < oldViews.length; oldIndex++) {
-    if (removableImageViews.has(oldIndex)) continue;
-    const view = oldViews[oldIndex];
-    const byteLength = Number(view.byteLength || 0);
-    const sourceOffset = Number(view.byteOffset || 0);
-    if (!Number.isFinite(byteLength) || byteLength < 0 || !Number.isFinite(sourceOffset) || sourceOffset < 0) return null;
-    if (sourceOffset + byteLength > structure.binChunk.length) return null;
-
-    outputOffset = (outputOffset + 3) & ~3;
-    const newIndex = newViews.length;
-    mapping.set(oldIndex, newIndex);
-    const newView = { ...view, byteOffset: outputOffset };
-    newViews.push(newView);
-    copyPlan.push({ sourceOffset, byteLength, destinationOffset: outputOffset });
-    outputOffset += byteLength;
-  }
-
-  if (!mapping.size) return null;
-  remapBufferViewRefs(gltf, mapping);
-  gltf.bufferViews = newViews;
-  const binLength = (outputOffset + 3) & ~3;
-  gltf.buffers[0].byteLength = binLength;
-  return { copyPlan, binLength };
-}
-
-async function copyRange(sourceHandle, destinationHandle, sourcePosition, length, destinationPosition) {
-  if (!length) return;
-  const buffer = Buffer.allocUnsafe(Math.min(COPY_BUFFER_SIZE, length));
-  let copied = 0;
-  while (copied < length) {
-    const wanted = Math.min(buffer.length, length - copied);
-    const { bytesRead } = await sourceHandle.read(buffer, 0, wanted, sourcePosition + copied);
-    if (!bytesRead) throw new Error('GLB kopyalanırken kaynak beklenmedik şekilde sona erdi.');
-    await writeExact(destinationHandle, buffer.subarray(0, bytesRead), destinationPosition + copied);
-    copied += bytesRead;
-  }
+  gltf.asset.extras = { ...(gltf.asset.extras || {}), matchframeSafeColor: true, cacheVersion: CACHE_VERSION };
+  return gltf;
 }
 
 async function sanitizeGeometryGlbFile(source, destination) {
   const structure = await readGlbStructure(source);
-  const sanitized = sanitizeGeometryJson(structure.gltf);
-  const compaction = buildBinCompaction(sanitized.gltf, structure, sanitized.removableImageViews);
-
-  let json = Buffer.from(JSON.stringify(sanitized.gltf), 'utf8');
+  const gltf = sanitizeGeometryJson(structure.gltf);
+  let json = Buffer.from(JSON.stringify(gltf), 'utf8');
   const jsonPad = (4 - (json.length % 4)) % 4;
   if (jsonPad) json = Buffer.concat([json, Buffer.alloc(jsonPad, 0x20)]);
 
-  const totalLength = 12 + structure.chunks.reduce((sum, chunk) => {
-    if (chunk === structure.jsonChunk) return sum + 8 + json.length;
-    if (chunk === structure.binChunk && compaction) return sum + 8 + compaction.binLength;
-    return sum + 8 + chunk.length;
-  }, 0);
+  const totalLength = 12 + structure.chunks.reduce((sum, chunk) => sum + 8 + (chunk === structure.jsonChunk ? json.length : chunk.length), 0);
   if (totalLength > 0xffffffff) throw new Error('GLB 4 GB sınırını aşıyor.');
 
   const sourceHandle = await fs.promises.open(source, 'r');
@@ -474,8 +330,7 @@ async function sanitizeGeometryGlbFile(source, destination) {
     let outPosition = 12;
     for (const chunk of structure.chunks) {
       const isJson = chunk === structure.jsonChunk;
-      const isCompactedBin = chunk === structure.binChunk && compaction;
-      const dataLength = isJson ? json.length : isCompactedBin ? compaction.binLength : chunk.length;
+      const dataLength = isJson ? json.length : chunk.length;
       const chunkHeader = Buffer.allocUnsafe(8);
       chunkHeader.writeUInt32LE(dataLength, 0);
       chunkHeader.writeUInt32LE(chunk.type, 4);
@@ -484,18 +339,16 @@ async function sanitizeGeometryGlbFile(source, destination) {
 
       if (isJson) {
         await writeExact(destinationHandle, json, outPosition);
-      } else if (isCompactedBin) {
-        for (const item of compaction.copyPlan) {
-          await copyRange(
-            sourceHandle,
-            destinationHandle,
-            structure.binChunk.dataOffset + item.sourceOffset,
-            item.byteLength,
-            outPosition + item.destinationOffset
-          );
-        }
       } else {
-        await copyRange(sourceHandle, destinationHandle, chunk.dataOffset, chunk.length, outPosition);
+        const buffer = Buffer.allocUnsafe(Math.min(COPY_BUFFER_SIZE, chunk.length));
+        let copied = 0;
+        while (copied < chunk.length) {
+          const wanted = Math.min(buffer.length, chunk.length - copied);
+          const { bytesRead } = await sourceHandle.read(buffer, 0, wanted, chunk.dataOffset + copied);
+          if (!bytesRead) throw new Error('GLB kopyalanırken kaynak beklenmedik şekilde sona erdi.');
+          await writeExact(destinationHandle, buffer.subarray(0, bytesRead), outPosition + copied);
+          copied += bytesRead;
+        }
       }
       outPosition += dataLength;
     }
@@ -510,88 +363,52 @@ async function atomicReplace(tempFile, destination) {
   await fs.promises.rename(tempFile, destination);
 }
 
-async function findSafePreviousCache(cacheRoot, map) {
-  for (const version of ['v5', 'v4']) {
-    const candidate = path.join(cacheRoot, `${map}.${version}.glb`);
-    if (await isSafeGlb(candidate)) return candidate;
-  }
-  return null;
-}
+async function buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb) {
+  const tempFile = `${cachedGlb}.tmp-${process.pid}-${Date.now()}`;
+  const cli = await ensureVrf();
+  try {
+    // IMPORTANT: export the compiled map resource first, then export that standalone .vmap_c.
+    // Direct VPK -> GLB export can resolve only part of the world graph and produced the
+    // "floating objects / missing map" result seen in the POV viewport.
+    const rawDir = path.join(cacheRoot, `raw-${CACHE_VERSION}`);
+    await fs.promises.rm(rawDir, { recursive: true, force: true });
+    await fs.promises.mkdir(rawDir, { recursive: true });
+    const internal = `maps/${map}.vmap_c`;
 
-async function findReusableRaw(cacheRoot, map) {
-  const direct = path.join(cacheRoot, `${map}.v3.glb`);
-  if (await isUsableRawGlb(direct)) return direct;
+    await execFileAsync(cli, [
+      '-i', mapVpk,
+      '-o', rawDir,
+      '-d',
+      '--vpk_filepath', internal
+    ], { timeout: 300000 });
 
-  // Prefer old exports that still contain the original image bufferView metadata. v6 can then
-  // physically remove those image bytes instead of merely ignoring the texture references.
-  for (const version of ['v3', 'v4', 'v5', 'v6']) {
-    const exportDir = path.join(cacheRoot, `export-${version}`);
-    const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
-    if (!glbs.length) continue;
-    const chosen = await chooseExport(glbs, map);
-    if (chosen && await isUsableRawGlb(chosen)) return chosen;
+    const compiled = await findRecursive(rawDir, (_full, name) => name.toLowerCase() === `${map}.vmap_c`);
+    if (!compiled) throw new Error(`${map}.vmap_c VPK içinden çıkarılamadı.`);
+
+    const rawGlb = path.join(cacheRoot, `${map}.standalone-${CACHE_VERSION}.glb`);
+    await fs.promises.rm(rawGlb, { force: true });
+    await execFileAsync(cli, [
+      '-i', compiled,
+      '-o', rawGlb,
+      '-d',
+      '--gltf_export_format', 'glb',
+      '--threads', '1',
+      '--game', gameInfo
+    ], { timeout: 300000 });
+
+    if (!(await isUsableRawGlb(rawGlb))) throw new Error('Standalone .vmap_c GLB çıktısı kullanılabilir değil.');
+    await sanitizeGeometryGlbFile(rawGlb, tempFile);
+    await atomicReplace(tempFile, cachedGlb);
+    return 'fresh-standalone-map-export';
+  } finally {
+    await fs.promises.rm(tempFile, { force: true }).catch(() => {});
   }
-  return null;
 }
 
 function registerAsset(file) {
   const token = crypto.randomUUID();
   served.set(token, file);
   return `matchframe-pov://asset/${token}/${encodeURIComponent(path.basename(file))}`;
-}
-
-async function buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb) {
-  const tempFile = `${cachedGlb}.tmp-${process.pid}-${Date.now()}`;
-  await fs.promises.rm(tempFile, { force: true });
-
-  try {
-    // Prefer the old raw v3/export output. It lets us remove embedded texture payloads from the
-    // BIN chunk while streaming, which makes the final file dramatically smaller and faster to
-    // load than the old v4/v5 caches that only removed JSON texture references.
-    const rawPrevious = await findReusableRaw(cacheRoot, map);
-    if (rawPrevious) {
-      await sanitizeGeometryGlbFile(rawPrevious, tempFile);
-      await atomicReplace(tempFile, cachedGlb);
-      return 'compacted-existing-export';
-    }
-
-    // If the raw source was already cleaned up, an old safe cache is still better than invoking
-    // Source2Viewer again. Babylon's own loading overlay is disabled by pov.js, so this remains
-    // a usable fallback even when that legacy cache is larger than ideal.
-    const safePrevious = await findSafePreviousCache(cacheRoot, map);
-    if (safePrevious) {
-      await fs.promises.copyFile(safePrevious, tempFile);
-      await atomicReplace(tempFile, cachedGlb);
-      return 'reused-safe-cache';
-    }
-
-    // True first run only. Keep the CLI hidden and geometry-only; never use its heavy texture
-    // export path. A hard timeout also prevents a stuck child process from living forever.
-    const cli = await ensureVrf();
-    const exportDir = path.join(cacheRoot, `export-${CACHE_VERSION}`);
-    await fs.promises.rm(exportDir, { recursive: true, force: true });
-    await fs.promises.mkdir(exportDir, { recursive: true });
-    const internal = `maps/${map}.vmap_c`;
-
-    await execFileAsync(cli, [
-      '-i', mapVpk,
-      '-o', exportDir,
-      '-d',
-      '--vpk_filepath', internal,
-      '--gltf_export_format', 'glb',
-      '--threads', '1',
-      '--game', gameInfo
-    ], { timeout: 180000 });
-
-    const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
-    const chosen = await chooseExport(glbs, map);
-    if (!chosen || !(await isUsableRawGlb(chosen))) throw new Error('Haritanın kullanılabilir GLB çıktısı bulunamadı.');
-    await sanitizeGeometryGlbFile(chosen, tempFile);
-    await atomicReplace(tempFile, cachedGlb);
-    return 'fresh-geometry-export';
-  } finally {
-    await fs.promises.rm(tempFile, { force: true }).catch(() => {});
-  }
 }
 
 async function prepare(mapName) {
@@ -609,10 +426,8 @@ async function prepare(mapName) {
     await fs.promises.mkdir(cacheRoot, { recursive: true });
     const cachedGlb = path.join(cacheRoot, `${map}.${CACHE_VERSION}.glb`);
 
-    let cacheSource = 'existing-v6';
-    if (!(await isSafeGlb(cachedGlb))) {
-      cacheSource = await buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb);
-    }
+    let cacheSource = 'existing-v7';
+    if (!(await isSafeGlb(cachedGlb))) cacheSource = await buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb);
     if (!(await isSafeGlb(cachedGlb))) throw new Error('POV cache oluşturuldu fakat doğrulanamadı.');
 
     return {
@@ -620,7 +435,7 @@ async function prepare(mapName) {
       map,
       url: registerAsset(cachedGlb),
       sourceScale: 0.0254,
-      renderer: `Source 2 Viewer ${VRF_VERSION} cached geometry / compact safe-colour conversion`,
+      renderer: `Source 2 Viewer ${VRF_VERSION} standalone .vmap_c geometry / safe-colour conversion`,
       cacheVersion: CACHE_VERSION,
       cacheSource,
       cs2RunningRequired: false
@@ -638,7 +453,6 @@ function installProtocol(protocol) {
       const token = url.pathname.split('/').filter(Boolean)[0];
       const file = served.get(token);
       if (!file || !fs.existsSync(file)) return new Response('Not found', { status: 404 });
-
       const response = await net.fetch(pathToFileURL(file).href);
       if (response.ok) return response;
       const bytes = await fs.promises.readFile(file);
