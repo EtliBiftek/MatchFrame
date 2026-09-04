@@ -14,11 +14,6 @@
   let resizePending = true;
   let contextLost = false;
 
-  // IMPORTANT: never let the Babylon canvas become display:none. Babylon has had a
-  // long-standing failure mode where resize() on a zero-sized/hidden canvas can grow the
-  // backing buffer by DPR repeatedly and eventually lose the WebGL context. MatchFrame used
-  // the global .hidden class on this canvas while the GLB was loading, which matches the
-  // red/orange compositor corruption followed by an all-black Electron window we observed.
   const style = document.createElement('style');
   style.textContent = `
     #povCanvas.hidden{display:block!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
@@ -37,10 +32,6 @@
     ensureCanvas();
     const rect = canvas.getBoundingClientRect();
     if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 1 || rect.height <= 1) return null;
-
-    // POV intentionally renders at CSS-pixel resolution. A full CS2 map already consumes a
-    // lot of GPU memory; multiplying the render target by Windows DPR gives almost no useful
-    // replay detail but can be enough to evict the WebGL context.
     const width = Math.max(2, Math.min(2560, Math.round(rect.width)));
     const height = Math.max(2, Math.min(1440, Math.round(rect.height)));
     return { width, height, cssWidth: rect.width, cssHeight: rect.height };
@@ -81,8 +72,6 @@
   function createScene() {
     if (!window.BABYLON) throw new Error('Babylon.js yüklenmedi.');
     ensureCanvas();
-
-    // The canvas stays in layout even while visually hidden, so these dimensions are real.
     if (!cssRenderSize()) throw new Error('POV görüntü alanı henüz boyutlandırılmadı.');
 
     if (!engine) {
@@ -112,8 +101,6 @@
       if (viewport) new ResizeObserver(() => { resizePending = true; }).observe(viewport);
 
       canvas.addEventListener('webglcontextlost', (event) => {
-        // Preventing the default tells Chromium that restoration is allowed. Babylon also has
-        // its own context-loss handling; we only stop issuing new draws until restoration.
         event.preventDefault();
         contextLost = true;
         resizePending = true;
@@ -142,9 +129,9 @@
     scene.activeCamera = camera;
 
     const hemi = new BABYLON.HemisphericLight('mf-hemi', new BABYLON.Vector3(0, 1, 0), scene);
-    hemi.intensity = 0.82;
+    hemi.intensity = 1.0;
     const sun = new BABYLON.DirectionalLight('mf-sun', new BABYLON.Vector3(-0.35, -0.8, 0.2), scene);
-    sun.intensity = 0.72;
+    sun.intensity = 0.45;
 
     ready = false;
     sceneBounds = null;
@@ -178,59 +165,46 @@
     return count ? { min, max } : null;
   }
 
-  function installStableGeometryMaterial(target) {
-    const importedMaterials = [...(target.materials || [])];
-    const importedTextures = [...(target.textures || [])];
-    materialCount = importedMaterials.length;
-    textureCount = importedTextures.length;
-
-    const stable = new BABYLON.StandardMaterial('mf-stable-map', target);
-    stable.diffuseColor = new BABYLON.Color3(0.48, 0.50, 0.53);
-    stable.ambientColor = new BABYLON.Color3(0.18, 0.18, 0.19);
-    stable.specularColor = new BABYLON.Color3(0.02, 0.02, 0.02);
-    stable.backFaceCulling = false;
-    stable.twoSidedLighting = true;
+  function stabilizeImportedMaterials(target) {
+    materialCount = target.materials?.length || 0;
+    textureCount = target.textures?.length || 0;
 
     for (const mesh of target.meshes || []) {
       try {
         if (!mesh?.getTotalVertices?.() || mesh.getTotalVertices() <= 0) continue;
-        // VRF currently has map exports where vertex colour/alpha can produce the giant
-        // red/orange polygons visible in the user's screenshot. Ignore all vertex tinting.
+        // VRF map exports can carry Source vertex tint/alpha that becomes huge red/orange
+        // polygons in glTF. Keep the real texture/material but ignore that broken vertex layer.
         mesh.useVertexColors = false;
         mesh.hasVertexAlpha = false;
-        mesh.material = stable;
       } catch (_) {}
     }
 
-    // Even if skipMaterials is ignored by an older loader, release every imported texture and
-    // material after replacing them. This keeps the full map geometry while dropping the main
-    // source of GPU-memory/context-loss pressure.
-    for (const material of importedMaterials) {
-      if (material !== stable) {
-        try { material.dispose(true, true); } catch (_) {}
-      }
+    for (const material of target.materials || []) {
+      try {
+        material.alpha = 1;
+        if (BABYLON.PBRMaterial && material instanceof BABYLON.PBRMaterial) {
+          // Preserve albedo textures/colours, but do not depend on Source 2 light probes that
+          // are not present in the exported GLB. This gives stable full-colour map textures.
+          material.unlit = true;
+          material.metallic = 0;
+          material.roughness = 1;
+          material.environmentIntensity = 0;
+          material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
+          material.useAlphaFromAlbedoTexture = false;
+          if (material.albedoTexture) material.albedoTexture.hasAlpha = false;
+        } else if (BABYLON.StandardMaterial && material instanceof BABYLON.StandardMaterial) {
+          material.disableLighting = true;
+          material.useAlphaFromDiffuseTexture = false;
+          if (material.diffuseTexture) material.diffuseTexture.hasAlpha = false;
+        }
+      } catch (_) {}
     }
-    for (const texture of importedTextures) {
-      try { texture.dispose(); } catch (_) {}
-    }
-  }
 
-  async function appendGeometryOnly(target, url) {
-    // Babylon's glTF loader exposes skipMaterials. Setting it on plugin activation means the
-    // embedded textures in VRF's large GLB are not decoded/uploaded to the GPU at all.
-    let observer = null;
-    const observable = BABYLON.SceneLoader?.OnPluginActivatedObservable;
-    if (observable?.add) {
-      observer = observable.add((plugin) => {
-        try {
-          if (plugin && 'skipMaterials' in plugin) plugin.skipMaterials = true;
-        } catch (_) {}
-      });
-    }
-    try {
-      await BABYLON.SceneLoader.AppendAsync('', url, target, undefined, '.glb');
-    } finally {
-      if (observer && observable?.remove) observable.remove(observer);
+    for (const texture of target.textures || []) {
+      try {
+        texture.anisotropicFilteringLevel = 1;
+        if ('hasAlpha' in texture) texture.hasAlpha = false;
+      } catch (_) {}
     }
   }
 
@@ -238,12 +212,14 @@
     if (ready && loadedUrl === url) return;
     const target = createScene();
     try {
-      await appendGeometryOnly(target, url);
+      // Keep map textures. The context-loss issue was caused by hidden-canvas/DPR resizing,
+      // not by the existence of textures. Materials are sanitized immediately after import.
+      await BABYLON.SceneLoader.AppendAsync('', url, target, undefined, '.glb');
       for (const item of [...target.cameras]) {
         if (item !== camera) item.dispose();
       }
       target.activeCamera = camera;
-      installStableGeometryMaterial(target);
+      stabilizeImportedMaterials(target);
       sceneBounds = calculateSceneBounds(target);
       if (!sceneBounds || renderableMeshCount === 0) {
         throw new Error('GLB yüklendi fakat render edilebilir map mesh’i bulunamadı.');
@@ -258,9 +234,6 @@
     }
   }
 
-  // ValveResourceFormat SourceToGltfRotation:
-  // Source +X -> glTF +Z, Source +Y -> glTF +X, Source +Z -> glTF +Y.
-  // Source units are inches and glTF units are metres.
   function sourceToGltf(x, y, z) {
     const u = 0.0254;
     return new BABYLON.Vector3(Number(y) * u, Number(z) * u, Number(x) * u);
@@ -336,6 +309,8 @@
   }
   function fps() { return lastFps; }
   function isPlayerUsable(player) { return usablePlayer(player); }
+  function getScene() { return scene; }
+  function getCamera() { return camera; }
   function diagnostics() {
     const wanted = cssRenderSize();
     return {
@@ -362,5 +337,8 @@
     disposeEngineOnly();
   }
 
-  window.matchframePov = { load, setPlayer, isReady, resize, fps, reset, isPlayerUsable, diagnostics };
+  window.matchframePov = {
+    load, setPlayer, isReady, resize, fps, reset, isPlayerUsable, diagnostics,
+    getScene, getCamera, sourceToGltf, sourceDirectionToGltf, sourceForward
+  };
 })();
