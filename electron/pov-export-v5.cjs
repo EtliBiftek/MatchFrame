@@ -8,7 +8,7 @@ const { pathToFileURL } = require('node:url');
 const VRF_VERSION = '20.0';
 const VRF_URL = `https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/${VRF_VERSION}/cli-windows-x64.zip`;
 const VRF_SHA256 = 'd32ab327b8bbb42a2528866afb03bb582bdb779d0005488da32b90292afd3ff5';
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const MIN_GLB_SIZE = 256 * 1024;
 const COPY_BUFFER_SIZE = 8 * 1024 * 1024;
 const JSON_CHUNK = 0x4e4f534a;
@@ -367,20 +367,36 @@ async function buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb) {
   const tempFile = `${cachedGlb}.tmp-${process.pid}-${Date.now()}`;
   const cli = await ensureVrf();
   try {
-    // IMPORTANT: export the compiled map resource first, then export that standalone .vmap_c.
-    // Direct VPK -> GLB export can resolve only part of the world graph and produced the
-    // "floating objects / missing map" result seen in the POV viewport.
     const rawDir = path.join(cacheRoot, `raw-${CACHE_VERSION}`);
     await fs.promises.rm(rawDir, { recursive: true, force: true });
     await fs.promises.mkdir(rawDir, { recursive: true });
     const internal = `maps/${map}.vmap_c`;
 
-    await execFileAsync(cli, [
-      '-i', mapVpk,
-      '-o', rawDir,
-      '-d',
-      '--vpk_filepath', internal
-    ], { timeout: 300000 });
+    // IMPORTANT: this first pass must extract the compiled .vmap_c unchanged.
+    // -d decompiles the resource into .vmap, which makes the compiled resource
+    // disappear from the extraction result and breaks the second export pass.
+    let extracted = false;
+    let extractionError = null;
+    for (const filter of [internal, `${map}.vmap_c`]) {
+      try {
+        await execFileAsync(cli, [
+          '-i', mapVpk,
+          '-o', rawDir,
+          '--vpk_filepath', filter
+        ], { timeout: 300000 });
+        const candidate = await findRecursive(rawDir, (_full, name) => name.toLowerCase() === `${map}.vmap_c`);
+        if (candidate) {
+          extracted = true;
+          break;
+        }
+      } catch (error) {
+        extractionError = error;
+      }
+    }
+    if (!extracted) {
+      const detail = extractionError ? `\n${String(extractionError.message || extractionError).trim()}` : '';
+      throw new Error(`${map}.vmap_c VPK içinden çıkarılamadı.${detail}`);
+    }
 
     const compiled = await findRecursive(rawDir, (_full, name) => name.toLowerCase() === `${map}.vmap_c`);
     if (!compiled) throw new Error(`${map}.vmap_c VPK içinden çıkarılamadı.`);
@@ -426,7 +442,7 @@ async function prepare(mapName) {
     await fs.promises.mkdir(cacheRoot, { recursive: true });
     const cachedGlb = path.join(cacheRoot, `${map}.${CACHE_VERSION}.glb`);
 
-    let cacheSource = 'existing-v7';
+    let cacheSource = 'existing-v8';
     if (!(await isSafeGlb(cachedGlb))) cacheSource = await buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb);
     if (!(await isSafeGlb(cachedGlb))) throw new Error('POV cache oluşturuldu fakat doğrulanamadı.');
 
