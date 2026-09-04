@@ -1,6 +1,7 @@
 var mfRadarAsset = null;
 var mfRadarImage = null;
 var mfRadarLoadingFor = null;
+var mfRadarStatic = null;
 
 const mfOriginalLoadDemo = loadDemo;
 const mfOriginalDrawCurrentFrame = drawCurrentFrame;
@@ -9,6 +10,7 @@ loadDemo = function(result) {
   mfRadarAsset = null;
   mfRadarImage = null;
   mfRadarLoadingFor = null;
+  mfRadarStatic = null;
   const grid = document.querySelector('.viewport-grid');
   if (grid) grid.style.opacity = '';
   mfOriginalLoadDemo(result);
@@ -33,6 +35,7 @@ async function mfLoadRadar(map) {
     if (mfRadarLoadingFor !== map) return;
     mfRadarAsset = asset;
     mfRadarImage = image;
+    mfRadarStatic = null;
     const grid = document.querySelector('.viewport-grid');
     if (grid) grid.style.opacity = '.04';
     $('viewerLabel').textContent = `${frameCount.toLocaleString('tr-TR')} replay frame · ${map} radar`;
@@ -41,6 +44,7 @@ async function mfLoadRadar(map) {
   } catch (error) {
     mfRadarAsset = null;
     mfRadarImage = null;
+    mfRadarStatic = null;
     $('viewerLabel').textContent = `${frameCount.toLocaleString('tr-TR')} replay frame · radar fallback`;
     log(`Radar load failed (${map}): ${error.message}`, 'error');
     drawCurrentFrame();
@@ -68,23 +72,44 @@ function mfWorldToScreen(worldX, worldY, viewport) {
   return [viewport.x + (radarX / imageW) * viewport.w, viewport.y + (radarY / imageH) * viewport.h];
 }
 
+function mfBuildStaticRadar(width, height) {
+  const w = Math.max(1, Math.round(width));
+  const h = Math.max(1, Math.round(height));
+  if (mfRadarStatic && mfRadarStatic.width === w && mfRadarStatic.height === h && mfRadarStatic.image === mfRadarImage) return mfRadarStatic;
+
+  const background = document.createElement('canvas');
+  background.width = w;
+  background.height = h;
+  const bg = background.getContext('2d', { alpha: false });
+  const viewport = mfRadarViewport(width, height);
+  bg.fillStyle = '#09090b';
+  bg.fillRect(0, 0, w, h);
+  bg.imageSmoothingEnabled = true;
+  bg.globalAlpha = .9;
+  bg.drawImage(mfRadarImage, viewport.x, viewport.y, viewport.w, viewport.h);
+  bg.globalAlpha = 1;
+  bg.strokeStyle = 'rgba(255,255,255,.08)';
+  bg.lineWidth = 1;
+  bg.strokeRect(viewport.x + .5, viewport.y + .5, viewport.w - 1, viewport.h - 1);
+  mfRadarStatic = { width: w, height: h, image: mfRadarImage, canvas: background, viewport };
+  return mfRadarStatic;
+}
+
+function mfHeadingRadians(yaw) {
+  // Source yaw 0° faces +X and positive yaw turns toward +Y. Radar Y is flipped on canvas,
+  // therefore the correct 2D canvas angle is -yaw (the old -90° offset pointed everyone wrong).
+  return -Number(yaw || 0) * Math.PI / 180;
+}
+
 drawCurrentFrame = function() {
   if (viewMode !== 'tactical') return;
   if (!mfRadarAsset || !mfRadarImage) { mfOriginalDrawCurrentFrame(); return; }
   const { width, height } = resizeCanvas();
+  const staticRadar = mfBuildStaticRadar(width, height);
+  const viewport = staticRadar.viewport;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#09090b';
-  ctx.fillRect(0, 0, width, height);
-  const viewport = mfRadarViewport(width, height);
-  ctx.save();
-  ctx.imageSmoothingEnabled = true;
-  ctx.globalAlpha = .9;
-  ctx.drawImage(mfRadarImage, viewport.x, viewport.y, viewport.w, viewport.h);
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = 'rgba(255,255,255,.08)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(viewport.x + .5, viewport.y + .5, viewport.w - 1, viewport.h - 1);
-  ctx.restore();
+  ctx.drawImage(staticRadar.canvas, 0, 0, width, height);
+
   const frame = nearestFrame(currentTick);
   if (!frame) return;
   const selected = playerInFrame(frame, selectedPlayer);
@@ -107,7 +132,7 @@ drawCurrentFrame = function() {
     }
     ctx.beginPath(); ctx.arc(x, y, isSelected ? 6 : 5, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 1; ctx.stroke();
-    const rad = (Number(player.yaw || 0) - 90) * Math.PI / 180;
+    const rad = mfHeadingRadians(player.yaw);
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(rad) * 14, y + Math.sin(rad) * 14);
     ctx.strokeStyle = isSelected ? '#f4f4f5' : color; ctx.lineWidth = 1.6; ctx.stroke();
     if (isSelected || width > 760) {
