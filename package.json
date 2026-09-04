@@ -1,6 +1,6 @@
 {
   "name": "matchframe",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CS2 demo POV viewer, timeline workstation and match analysis desktop app",
   "main": "electron/main.cjs",
   "author": "EtliBiftek",
