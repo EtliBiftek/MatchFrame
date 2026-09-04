@@ -24,7 +24,7 @@ const RADAR_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 const VRF_VERSION = '20.0';
 const VRF_URL = `https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/${VRF_VERSION}/cli-windows-x64.zip`;
 const VRF_SHA256 = 'd32ab327b8bbb42a2528866afb03bb582bdb779d0005488da32b90292afd3ff5';
-const POV_CACHE_VERSION = 'v2';
+const POV_CACHE_VERSION = 'v3';
 const VOICE_TOOL_VERSION = 'v3.1.6';
 const VOICE_TOOL_URL = `https://github.com/akiver/csgo-voice-extractor/releases/download/${VOICE_TOOL_VERSION}/win32-x64.zip`;
 const VOICE_TOOL_SHA256 = '1f5ad987e6aa0e207268992a169f87a6e78c64561353655e424676ee7bfdcb5b';
@@ -318,6 +318,7 @@ async function prepareOfflinePov(mapName) {
       await fs.promises.mkdir(exportDir, { recursive: true });
       const internal = `maps/${map}.vmap_c`;
       let exported = null;
+      let directExportError = null;
       try {
         await execFileAsync(cli, [
           '-i', mapVpk,
@@ -334,15 +335,41 @@ async function prepareOfflinePov(mapName) {
           const stats = await Promise.all(glbs.map(async (file) => ({ file, size: (await fs.promises.stat(file)).size })));
           exported = stats.sort((a, b) => b.size - a.size)[0].file;
         }
-      } catch (_) {}
+      } catch (error) {
+        directExportError = error;
+      }
 
       if (!exported) {
         const rawDir = path.join(cacheRoot, `raw-${POV_CACHE_VERSION}`);
         await fs.promises.rm(rawDir, { recursive: true, force: true });
         await fs.promises.mkdir(rawDir, { recursive: true });
-        await execFileAsync(cli, ['-i', mapVpk, '-o', rawDir, '--vpk_filepath', internal], { timeout: 5 * 60 * 1000 });
+
+        // Do NOT pass -d here. The purpose of this pass is to extract the compiled
+        // .vmap_c resource unchanged. Passing -d decompiles it to a source .vmap,
+        // so the old code could never find `${map}.vmap_c` afterward.
+        let extracted = false;
+        let extractionError = null;
+        const filters = [internal, `${map}.vmap_c`];
+        for (const filter of filters) {
+          try {
+            await execFileAsync(cli, ['-i', mapVpk, '-o', rawDir, '--vpk_filepath', filter], { timeout: 5 * 60 * 1000 });
+            const compiledCandidate = await findRecursive(rawDir, (_full, name) => name.toLowerCase() === `${map}.vmap_c`);
+            if (compiledCandidate) {
+              extracted = true;
+              break;
+            }
+          } catch (error) {
+            extractionError = error;
+          }
+        }
+
+        if (!extracted) {
+          const detail = extractionError || directExportError;
+          throw new Error(`${map}.vmap_c VPK içinden çıkarılamadı.${detail ? `\n${String(detail.message || detail).trim()}` : ''}`);
+        }
+
         const compiled = await findRecursive(rawDir, (_full, name) => name.toLowerCase() === `${map}.vmap_c`);
-        if (!compiled) throw new Error('Source 2 map resource VPK içinden çıkarılamadı.');
+        if (!compiled) throw new Error(`${map}.vmap_c VPK içinden çıkarılamadı.`);
         await execFileAsync(cli, [
           '-i', compiled,
           '-o', cachedGlb,
