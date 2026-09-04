@@ -10,11 +10,14 @@ contextBridge.exposeInMainWorld('matchframe', {
     open: () => ipcRenderer.invoke('demo:open'),
     launch: (path) => ipcRenderer.invoke('demo:launch', path)
   },
-  capture: {
-    status: () => ipcRenderer.invoke('capture:status')
-  },
   radar: {
     load: (mapName) => ipcRenderer.invoke('radar:load', mapName)
+  },
+  pov: {
+    prepare: (mapName) => ipcRenderer.invoke('pov:prepare', mapName)
+  },
+  voice: {
+    prepare: (path) => ipcRenderer.invoke('voice:prepare', path)
   },
   core: {
     status: () => ipcRenderer.invoke('core:status'),
