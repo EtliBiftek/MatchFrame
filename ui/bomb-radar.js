@@ -44,6 +44,15 @@
     return Math.min(pickup, plant, nextDrop);
   }
 
+  function worldRadiusToPixels(radius) {
+    const viewport = window.matchframeRadarFast?.viewport?.();
+    const asset = typeof mfRadarAsset !== 'undefined' ? mfRadarAsset : null;
+    const image = typeof mfRadarImage !== 'undefined' ? mfRadarImage : null;
+    if (!viewport || !asset?.overview || !image) return 0;
+    const imageW = Math.max(1, image.naturalWidth || image.width || 1);
+    return Math.abs(Number(radius) / Number(asset.overview.scale || 1) / imageW * viewport.w);
+  }
+
   function drawC4Symbol(x, y, pulse = 1) {
     ctx.save();
     ctx.translate(x, y);
@@ -144,11 +153,67 @@
     }
   }
 
+  function explosionPlant(explosion) {
+    let found = null;
+    for (const plant of bombIndex.plants) {
+      if (plant.tick <= explosion.tick) found = plant;
+      else break;
+    }
+    return found;
+  }
+
+  function drawBombExplosions() {
+    if (viewMode !== 'tactical' || !demo || !window.matchframeRadarFast) return;
+    const life = tickRate() * 1.35;
+    for (const explosion of bombIndex.explosions) {
+      const elapsed = currentTick - explosion.tick;
+      if (elapsed < 0 || elapsed > life) continue;
+      const plant = explosionPlant(explosion);
+      if (!plant?.position) continue;
+      const point = window.matchframeRadarFast.worldToScreen(plant.position.X, plant.position.Y);
+      if (!point) continue;
+      const [x, y] = point;
+      const t = Math.max(0, Math.min(1, elapsed / life));
+      const ease = 1 - Math.pow(1 - t, 3);
+      const maxRadius = worldRadiusToPixels(1750);
+      const radius = maxRadius * ease;
+      ctx.save();
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, Math.max(1, radius));
+      grad.addColorStop(0, `rgba(255,103,70,${.28 * (1 - t)})`);
+      grad.addColorStop(.42, `rgba(245,84,58,${.15 * (1 - t)})`);
+      grad.addColorStop(1, 'rgba(245,84,58,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = Math.max(0, 1 - t);
+      ctx.strokeStyle = 'rgba(255,119,91,.95)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([5, 6]);
+      ctx.strokeStyle = 'rgba(255,185,165,.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, y, radius * .55, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.font = 'bold 8px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = `rgba(255,196,181,${Math.max(0, 1 - t)})`;
+      ctx.fillText('C4 PATLAMA ALANI', x, y - Math.min(radius + 8, 58));
+      ctx.restore();
+    }
+  }
+
   const previousDraw = drawCurrentFrame;
   drawCurrentFrame = function() {
     previousDraw();
     drawC4Carrier();
     drawDroppedC4();
     drawPlantedC4();
+    drawBombExplosions();
   };
 })();
