@@ -1,8 +1,8 @@
 const { parentPort } = require('node:worker_threads');
 const { parseHeader, parsePlayerInfo, parseEvent, parseTicks } = require('@laihoe/demoparser2');
 
-function safeEvent(file, name) {
-  try { return parseEvent(file, name, [], []); } catch (_) { return []; }
+function safeEvent(file, name, player = [], other = []) {
+  try { return parseEvent(file, name, player, other); } catch (_) { return []; }
 }
 
 function finite(value) {
@@ -21,8 +21,8 @@ function buildFrames(rows) {
       byTick.set(tick, frame);
     }
     frame.players.push({
-      steamid: String(row.steamid ?? ''),
-      name: String(row.name ?? ''),
+      steamid: String(row.steamid ?? row.player_steamid ?? ''),
+      name: String(row.name ?? row.player_name ?? ''),
       X: finite(row.X),
       Y: finite(row.Y),
       Z: finite(row.Z),
@@ -51,20 +51,80 @@ function boundsFromFrames(frames) {
   return { minX: minX - padX, maxX: maxX + padX, minY: minY - padY, maxY: maxY + padY };
 }
 
+function eventTick(event) {
+  return finite(event?.tick) ?? 0;
+}
+
+function inferTickRate(roundStarts) {
+  const samples = [];
+  const starts = [...roundStarts].sort((a, b) => eventTick(a) - eventTick(b));
+  for (let i = 1; i < starts.length; i++) {
+    const prevTick = eventTick(starts[i - 1]);
+    const tick = eventTick(starts[i]);
+    const prevTime = finite(starts[i - 1].round_start_time);
+    const time = finite(starts[i].round_start_time);
+    if (prevTime === null || time === null || time <= prevTime || tick <= prevTick) continue;
+    const rate = (tick - prevTick) / (time - prevTime);
+    if (rate >= 30 && rate <= 256) samples.push(rate);
+  }
+  if (!samples.length) return 64;
+  samples.sort((a, b) => a - b);
+  const median = samples[Math.floor(samples.length / 2)];
+  const common = [32, 64, 128];
+  return common.reduce((best, value) => Math.abs(value - median) < Math.abs(best - median) ? value : best, 64);
+}
+
+function buildRoundMeta(roundStarts, roundEnds, maxTick) {
+  let starts = [...roundStarts]
+    .map((event) => ({
+      tick: eventTick(event),
+      warmup: Boolean(event.is_warmup_period),
+      played: finite(event.total_rounds_played),
+      time: finite(event.round_start_time)
+    }))
+    .filter((x) => x.tick >= 0 && !x.warmup)
+    .sort((a, b) => a.tick - b.tick);
+
+  // Some demos duplicate round_start packets. Keep one start per nearby tick.
+  starts = starts.filter((item, index) => index === 0 || item.tick - starts[index - 1].tick > 16);
+
+  const ends = [...roundEnds].map(eventTick).filter((x) => x > 0).sort((a, b) => a - b);
+  if (!starts.length && ends.length) {
+    let previous = 0;
+    starts = ends.map((end, index) => {
+      const item = { tick: previous, played: index, time: null, warmup: false };
+      previous = end + 1;
+      return item;
+    });
+  }
+
+  return starts.map((start, index) => {
+    const nextStart = starts[index + 1]?.tick;
+    const matchingEnd = ends.find((end) => end >= start.tick && (nextStart == null || end < nextStart));
+    const endTick = matchingEnd ?? (nextStart != null ? Math.max(start.tick, nextStart - 1) : maxTick);
+    return {
+      number: Number.isFinite(start.played) ? start.played + 1 : index + 1,
+      startTick: start.tick,
+      endTick: Math.max(start.tick, endTick)
+    };
+  });
+}
+
 parentPort.on('message', ({ file }) => {
   try {
     const header = parseHeader(file);
     const players = parsePlayerInfo(file);
-    const rounds = safeEvent(file, 'round_end');
-    const deaths = safeEvent(file, 'player_death');
-    const plants = safeEvent(file, 'bomb_planted');
-    const defuses = safeEvent(file, 'bomb_defused');
-    const explosions = safeEvent(file, 'bomb_exploded');
+    const roundStarts = safeEvent(file, 'round_start', [], ['round_start_time', 'total_rounds_played', 'is_warmup_period']);
+    const roundEnds = safeEvent(file, 'round_end', [], ['total_rounds_played', 'is_warmup_period']);
+    const deaths = safeEvent(file, 'player_death', ['player_steamid', 'player_name'], ['total_rounds_played']);
+    const plants = safeEvent(file, 'bomb_planted', ['player_steamid', 'player_name'], ['total_rounds_played']);
+    const defuses = safeEvent(file, 'bomb_defused', ['player_steamid', 'player_name'], ['total_rounds_played']);
+    const explosions = safeEvent(file, 'bomb_exploded', [], ['total_rounds_played']);
 
-    const eventTicks = [...rounds, ...deaths, ...plants, ...defuses, ...explosions]
-      .map((event) => Number(event.tick || 0))
+    const eventTicks = [...roundStarts, ...roundEnds, ...deaths, ...plants, ...defuses, ...explosions]
+      .map(eventTick)
       .filter(Number.isFinite);
-    const maxTick = eventTicks.length ? Math.max(...eventTicks) : 0;
+    let maxTick = eventTicks.length ? Math.max(...eventTicks) : 0;
 
     let frames = [];
     let viewerError = null;
@@ -76,22 +136,30 @@ parentPort.on('message', ({ file }) => {
       try {
         const rows = parseTicks(file, ['X', 'Y', 'Z', 'pitch', 'yaw', 'health', 'is_alive', 'team_num'], wantedTicks);
         frames = buildFrames(rows);
+        if (frames.length) maxTick = Math.max(maxTick, frames[frames.length - 1].tick);
       } catch (error) {
         viewerError = error?.message || String(error);
       }
     }
+
+    const tickRate = inferTickRate(roundStarts);
+    const roundMeta = buildRoundMeta(roundStarts, roundEnds, maxTick);
 
     parentPort.postMessage({
       ok: true,
       data: {
         header,
         players,
-        rounds,
+        roundStarts,
+        rounds: roundEnds,
+        roundMeta,
         deaths,
         plants,
         defuses,
         explosions,
         maxTick,
+        tickRate,
+        durationSeconds: maxTick / tickRate,
         sampleStep,
         frames,
         bounds: boundsFromFrames(frames),
