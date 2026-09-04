@@ -32,8 +32,10 @@
     ensureCanvas();
     const rect = canvas.getBoundingClientRect();
     if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 1 || rect.height <= 1) return null;
-    const width = Math.max(2, Math.min(2560, Math.round(rect.width)));
-    const height = Math.max(2, Math.min(1440, Math.round(rect.height)));
+    // A full Source 2 map is heavy enough without supersampling. 1080p is plenty for the
+    // embedded replay viewport and leaves GPU headroom for actors/utility/viewmodel overlays.
+    const width = Math.max(2, Math.min(1920, Math.round(rect.width)));
+    const height = Math.max(2, Math.min(1080, Math.round(rect.height)));
     return { width, height, cssWidth: rect.width, cssHeight: rect.height };
   }
 
@@ -165,6 +167,11 @@
     return count ? { min, max } : null;
   }
 
+  function detachTexture(material, key) {
+    if (!material || !(key in material)) return;
+    try { material[key] = null; } catch (_) {}
+  }
+
   function stabilizeImportedMaterials(target) {
     materialCount = target.materials?.length || 0;
     textureCount = target.textures?.length || 0;
@@ -172,8 +179,8 @@
     for (const mesh of target.meshes || []) {
       try {
         if (!mesh?.getTotalVertices?.() || mesh.getTotalVertices() <= 0) continue;
-        // VRF map exports can carry Source vertex tint/alpha that becomes huge red/orange
-        // polygons in glTF. Keep the real texture/material but ignore that broken vertex layer.
+        // Source vertex tint/alpha is unreliable in VRF map exports and previously produced
+        // the giant red/orange polygons. The v4 cache removes COLOR_0 too; this is defensive.
         mesh.useVertexColors = false;
         mesh.hasVertexAlpha = false;
       } catch (_) {}
@@ -183,28 +190,38 @@
       try {
         material.alpha = 1;
         if (BABYLON.PBRMaterial && material instanceof BABYLON.PBRMaterial) {
-          // Preserve albedo textures/colours, but do not depend on Source 2 light probes that
-          // are not present in the exported GLB. This gives stable full-colour map textures.
+          // v4 keeps lightweight base colours from the Source material names but never uploads
+          // the embedded map textures. Full VRF textures repeatedly killed Chromium's GPU process.
+          detachTexture(material, 'albedoTexture');
+          detachTexture(material, 'metallicTexture');
+          detachTexture(material, 'bumpTexture');
+          detachTexture(material, 'ambientTexture');
+          detachTexture(material, 'emissiveTexture');
+          detachTexture(material, 'opacityTexture');
+          detachTexture(material, 'reflectionTexture');
           material.unlit = true;
           material.metallic = 0;
           material.roughness = 1;
           material.environmentIntensity = 0;
           material.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_OPAQUE;
           material.useAlphaFromAlbedoTexture = false;
-          if (material.albedoTexture) material.albedoTexture.hasAlpha = false;
         } else if (BABYLON.StandardMaterial && material instanceof BABYLON.StandardMaterial) {
+          detachTexture(material, 'diffuseTexture');
+          detachTexture(material, 'bumpTexture');
+          detachTexture(material, 'ambientTexture');
+          detachTexture(material, 'emissiveTexture');
+          detachTexture(material, 'opacityTexture');
+          detachTexture(material, 'reflectionTexture');
           material.disableLighting = true;
           material.useAlphaFromDiffuseTexture = false;
-          if (material.diffuseTexture) material.diffuseTexture.hasAlpha = false;
         }
       } catch (_) {}
     }
 
-    for (const texture of target.textures || []) {
-      try {
-        texture.anisotropicFilteringLevel = 1;
-        if ('hasAlpha' in texture) texture.hasAlpha = false;
-      } catch (_) {}
+    // If an old/corrupt cache still contains texture objects, release them immediately. The
+    // actor/viewmodel materials are created later by pov-world.js and are not part of this list.
+    for (const texture of [...(target.textures || [])]) {
+      try { texture.dispose(); } catch (_) {}
     }
   }
 
@@ -212,8 +229,6 @@
     if (ready && loadedUrl === url) return;
     const target = createScene();
     try {
-      // Keep map textures. The context-loss issue was caused by hidden-canvas/DPR resizing,
-      // not by the existence of textures. Materials are sanitized immediately after import.
       await BABYLON.SceneLoader.AppendAsync('', url, target, undefined, '.glb');
       for (const item of [...target.cameras]) {
         if (item !== camera) item.dispose();
