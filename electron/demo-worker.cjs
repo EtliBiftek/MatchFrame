@@ -1,6 +1,10 @@
 const { parentPort } = require('node:worker_threads');
 const { parseHeader, parsePlayerInfo, parseEvent, parseTicks } = require('@laihoe/demoparser2');
 
+function reportProgress(percent, stage) {
+  parentPort.postMessage({ type: 'progress', percent: Math.max(0, Math.min(100, Math.round(percent))), stage });
+}
+
 function safeEvent(file, name, player = [], other = []) {
   try { return parseEvent(file, name, player, other); } catch (_) { return []; }
 }
@@ -221,17 +225,23 @@ function buildRoundMeta(roundStarts, roundEnds, maxTick) {
 
 parentPort.on('message', ({ file }) => {
   try {
+    reportProgress(2, 'Demo header okunuyor…');
     const header = parseHeader(file);
+    reportProgress(7, 'Oyuncu listesi okunuyor…');
     const rawPlayers = parsePlayerInfo(file);
+
+    reportProgress(12, 'Round ve kill eventleri ayrıştırılıyor…');
     const roundStarts = safeEvent(file, 'round_start', [], ['round_start_time', 'total_rounds_played', 'is_warmup_period']);
     const roundEnds = safeEvent(file, 'round_end', [], ['total_rounds_played', 'is_warmup_period']);
     const deaths = safeEvent(file, 'player_death', ['player_steamid', 'player_name'], ['total_rounds_played']);
+    reportProgress(18, 'C4 eventleri ayrıştırılıyor…');
     const plants = safeEvent(file, 'bomb_planted', ['X', 'Y', 'Z'], ['total_rounds_played']);
     const defuses = safeEvent(file, 'bomb_defused', ['X', 'Y', 'Z'], ['total_rounds_played']);
     const explosions = safeEvent(file, 'bomb_exploded', ['X', 'Y', 'Z'], ['total_rounds_played']);
     const bombDrops = safeEvent(file, 'bomb_dropped', ['X', 'Y', 'Z'], ['total_rounds_played']);
     const bombPickups = safeEvent(file, 'bomb_pickup', ['X', 'Y', 'Z'], ['total_rounds_played']);
 
+    reportProgress(24, 'Utility eventleri ayrıştırılıyor…');
     const smokeStarts = safeEvent(file, 'smokegrenade_detonate', ['player_steamid', 'player_name'], []);
     const smokeEnds = safeEvent(file, 'smokegrenade_expired', ['player_steamid', 'player_name'], []);
     const infernoStarts = safeEvent(file, 'inferno_startburn', ['player_steamid', 'player_name'], []);
@@ -268,10 +278,12 @@ parentPort.on('message', ({ file }) => {
       sampleStep = maxTick > 220000 ? 16 : maxTick > 150000 ? 12 : 8;
       const wantedTicks = [];
       for (let tick = 0; tick <= maxTick; tick += sampleStep) wantedTicks.push(tick);
+      reportProgress(32, `${wantedTicks.length.toLocaleString('tr-TR')} radar tick'i hazırlanıyor…`);
       try {
         const rows = parseTicks(file, [
           'X','Y','Z','pitch','yaw','fov','duck_amount','in_crouch','health','armor','is_alive','team_num','team_name','team_clan_name','active_weapon_name','active_weapon_ammo','inventory'
         ], wantedTicks);
+        reportProgress(67, 'Radar frame’leri indeksleniyor…');
         frames = buildFrames(rows);
         if (frames.length) maxTick = Math.max(maxTick, frames[frames.length - 1].tick);
       } catch (error) {
@@ -279,20 +291,26 @@ parentPort.on('message', ({ file }) => {
       }
     }
 
+    reportProgress(72, 'Takımlar ve oyuncu durumları hazırlanıyor…');
     const players = enrichPlayersWithTeams(rawPlayers, frames);
 
     let cameraTracks = [];
     let cameraError = null;
     try {
+      reportProgress(78, 'POV kamera track’leri okunuyor…');
       const exact = parseTicks(file, ['X','Y','Z','pitch','yaw','fov','duck_amount'], null, true);
+      reportProgress(94, 'POV kamera track’leri indeksleniyor…');
       cameraTracks = buildCameraTracks(exact);
     } catch (error) {
       cameraError = error?.message || String(error);
     }
 
+    reportProgress(97, 'Timeline ve round indexleri hazırlanıyor…');
     const tickRate = inferTickRate(roundStarts);
     const roundMeta = buildRoundMeta(roundStarts, roundEnds, maxTick);
+    const bounds = boundsFromFrames(frames);
 
+    reportProgress(100, 'Demo hazır.');
     parentPort.postMessage({
       ok: true,
       data: {
@@ -314,7 +332,7 @@ parentPort.on('message', ({ file }) => {
         frames,
         cameraTracks,
         cameraError,
-        bounds: boundsFromFrames(frames),
+        bounds,
         viewerError
       }
     });
