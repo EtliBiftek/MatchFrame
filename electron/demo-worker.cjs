@@ -98,7 +98,9 @@ function buildCameraTracks(data) {
   const push = (steamidRaw, nameRaw, tickRaw, source) => {
     const steamid = String(steamidRaw ?? '');
     const tick = finite(tickRaw);
-    if (!steamid || tick === null) return;
+    const X = finite(source.X), Y = finite(source.Y), Z = finite(source.Z);
+    if (!steamid || tick === null || X === null || Y === null || Z === null) return;
+    if (X === 0 && Y === 0 && Z === 0) return;
     let track = tracks.get(steamid);
     if (!track) {
       track = { steamid, name: String(nameRaw ?? ''), ticks: [], values: [] };
@@ -106,9 +108,7 @@ function buildCameraTracks(data) {
     }
     track.ticks.push(tick);
     track.values.push(
-      finite(source.X) ?? 0,
-      finite(source.Y) ?? 0,
-      finite(source.Z) ?? 0,
+      X, Y, Z,
       finite(source.pitch) ?? 0,
       finite(source.yaw) ?? 0,
       finite(source.fov) ?? 90,
@@ -221,9 +221,32 @@ parentPort.on('message', ({ file }) => {
     const defuses = safeEvent(file, 'bomb_defused', ['player_steamid', 'player_name'], ['total_rounds_played']);
     const explosions = safeEvent(file, 'bomb_exploded', [], ['total_rounds_played']);
 
-    const eventTicks = [...roundStarts, ...roundEnds, ...deaths, ...plants, ...defuses, ...explosions]
-      .map(eventTick)
-      .filter(Number.isFinite);
+    const smokeStarts = safeEvent(file, 'smokegrenade_detonate', ['player_steamid', 'player_name'], []);
+    const smokeEnds = safeEvent(file, 'smokegrenade_expired', ['player_steamid', 'player_name'], []);
+    const infernoStarts = safeEvent(file, 'inferno_startburn', ['player_steamid', 'player_name'], []);
+    const infernoEnds = safeEvent(file, 'inferno_expire', ['player_steamid', 'player_name'], []);
+    const heDetonates = safeEvent(file, 'hegrenade_detonate', ['player_steamid', 'player_name'], []);
+    const flashDetonates = safeEvent(file, 'flashbang_detonate', ['player_steamid', 'player_name'], []);
+    const playerBlinds = safeEvent(file, 'player_blind', ['player_steamid', 'player_name'], ['blind_duration']);
+    const decoyStarts = safeEvent(file, 'decoy_started', ['player_steamid', 'player_name'], []);
+    const decoyEnds = safeEvent(file, 'decoy_detonate', ['player_steamid', 'player_name'], []);
+
+    const utility = {
+      smokeStarts,
+      smokeEnds,
+      infernoStarts,
+      infernoEnds,
+      heDetonates,
+      flashDetonates,
+      playerBlinds,
+      decoyStarts,
+      decoyEnds
+    };
+
+    const eventTicks = [
+      ...roundStarts, ...roundEnds, ...deaths, ...plants, ...defuses, ...explosions,
+      ...smokeStarts, ...smokeEnds, ...infernoStarts, ...infernoEnds, ...heDetonates, ...flashDetonates, ...playerBlinds
+    ].map(eventTick).filter(Number.isFinite);
     let maxTick = eventTicks.length ? Math.max(...eventTicks) : 0;
 
     let frames = [];
@@ -249,9 +272,6 @@ parentPort.on('message', ({ file }) => {
     let cameraTracks = [];
     let cameraError = null;
     try {
-      // Parse every demo tick for the replicated eye position/angles. This avoids the old 8-16
-      // tick sampling error in POV while remaining compatible with demos whose usercmd delta data
-      // is unavailable in current parser builds.
       const exact = parseTicks(file, ['X','Y','Z','pitch','yaw','fov','duck_amount'], null, true);
       cameraTracks = buildCameraTracks(exact);
     } catch (error) {
@@ -273,6 +293,7 @@ parentPort.on('message', ({ file }) => {
         plants,
         defuses,
         explosions,
+        utility,
         maxTick,
         tickRate,
         durationSeconds: maxTick / tickRate,
