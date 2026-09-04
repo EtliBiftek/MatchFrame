@@ -11,6 +11,14 @@ function finite(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+function inventoryHasC4(value) {
+  if (value == null) return false;
+  if (Array.isArray(value)) return value.some(inventoryHasC4);
+  if (typeof value === 'object') return Object.values(value).some(inventoryHasC4);
+  const text = String(value).toLowerCase();
+  return /(^|[^a-z0-9])(c4|weapon_c4)([^a-z0-9]|$)/.test(text);
+}
+
 function buildFrames(rows) {
   const byTick = new Map();
   for (const row of Array.isArray(rows) ? rows : []) {
@@ -39,7 +47,8 @@ function buildFrames(rows) {
       team_name: String(row.team_name ?? ''),
       team_clan_name: String(row.team_clan_name ?? ''),
       active_weapon_name: String(row.active_weapon_name ?? ''),
-      active_weapon_ammo: finite(row.active_weapon_ammo)
+      active_weapon_ammo: finite(row.active_weapon_ammo),
+      has_c4: inventoryHasC4(row.inventory)
     });
   }
   return [...byTick.values()].sort((a, b) => a.tick - b.tick);
@@ -217,9 +226,11 @@ parentPort.on('message', ({ file }) => {
     const roundStarts = safeEvent(file, 'round_start', [], ['round_start_time', 'total_rounds_played', 'is_warmup_period']);
     const roundEnds = safeEvent(file, 'round_end', [], ['total_rounds_played', 'is_warmup_period']);
     const deaths = safeEvent(file, 'player_death', ['player_steamid', 'player_name'], ['total_rounds_played']);
-    const plants = safeEvent(file, 'bomb_planted', ['player_steamid', 'player_name'], ['total_rounds_played']);
-    const defuses = safeEvent(file, 'bomb_defused', ['player_steamid', 'player_name'], ['total_rounds_played']);
-    const explosions = safeEvent(file, 'bomb_exploded', [], ['total_rounds_played']);
+    const plants = safeEvent(file, 'bomb_planted', ['X', 'Y', 'Z'], ['total_rounds_played']);
+    const defuses = safeEvent(file, 'bomb_defused', ['X', 'Y', 'Z'], ['total_rounds_played']);
+    const explosions = safeEvent(file, 'bomb_exploded', ['X', 'Y', 'Z'], ['total_rounds_played']);
+    const bombDrops = safeEvent(file, 'bomb_dropped', ['X', 'Y', 'Z'], ['total_rounds_played']);
+    const bombPickups = safeEvent(file, 'bomb_pickup', ['X', 'Y', 'Z'], ['total_rounds_played']);
 
     const smokeStarts = safeEvent(file, 'smokegrenade_detonate', ['player_steamid', 'player_name'], []);
     const smokeEnds = safeEvent(file, 'smokegrenade_expired', ['player_steamid', 'player_name'], []);
@@ -242,9 +253,10 @@ parentPort.on('message', ({ file }) => {
       decoyStarts,
       decoyEnds
     };
+    const bomb = { plants, defuses, explosions, drops: bombDrops, pickups: bombPickups };
 
     const eventTicks = [
-      ...roundStarts, ...roundEnds, ...deaths, ...plants, ...defuses, ...explosions,
+      ...roundStarts, ...roundEnds, ...deaths, ...plants, ...defuses, ...explosions, ...bombDrops, ...bombPickups,
       ...smokeStarts, ...smokeEnds, ...infernoStarts, ...infernoEnds, ...heDetonates, ...flashDetonates, ...playerBlinds
     ].map(eventTick).filter(Number.isFinite);
     let maxTick = eventTicks.length ? Math.max(...eventTicks) : 0;
@@ -258,7 +270,7 @@ parentPort.on('message', ({ file }) => {
       for (let tick = 0; tick <= maxTick; tick += sampleStep) wantedTicks.push(tick);
       try {
         const rows = parseTicks(file, [
-          'X','Y','Z','pitch','yaw','fov','duck_amount','in_crouch','health','armor','is_alive','team_num','team_name','team_clan_name','active_weapon_name','active_weapon_ammo'
+          'X','Y','Z','pitch','yaw','fov','duck_amount','in_crouch','health','armor','is_alive','team_num','team_name','team_clan_name','active_weapon_name','active_weapon_ammo','inventory'
         ], wantedTicks);
         frames = buildFrames(rows);
         if (frames.length) maxTick = Math.max(maxTick, frames[frames.length - 1].tick);
@@ -293,6 +305,7 @@ parentPort.on('message', ({ file }) => {
         plants,
         defuses,
         explosions,
+        bomb,
         utility,
         maxTick,
         tickRate,
