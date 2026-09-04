@@ -1,8 +1,16 @@
 (() => {
   let damageBySteam = new Map();
+  let fireBySteam = new Map();
 
-  function buildDamageIndex(result) {
+  function pushEvent(index, steamid, event) {
+    if (!steamid) return;
+    if (!index.has(steamid)) index.set(steamid, []);
+    index.get(steamid).push(event);
+  }
+
+  function buildCombatIndex(result) {
     damageBySteam = new Map();
+    fireBySteam = new Map();
     const frames = result?.frames || [];
     const previous = new Map();
     for (const frame of frames) {
@@ -11,12 +19,24 @@
         const steamid = String(player?.steamid || '');
         if (!steamid) continue;
         const hp = Number(player?.health);
+        const ammo = Number(player?.active_weapon_ammo);
+        const weapon = String(player?.active_weapon_name || '').toLowerCase();
         const before = previous.get(steamid);
+
         if (Number.isFinite(hp) && before && Number.isFinite(before.hp) && hp < before.hp && hp >= 0) {
-          if (!damageBySteam.has(steamid)) damageBySteam.set(steamid, []);
-          damageBySteam.get(steamid).push({ tick, amount: Math.max(1, before.hp - hp) });
+          pushEvent(damageBySteam, steamid, { tick, amount: Math.max(1, before.hp - hp) });
         }
-        if (Number.isFinite(hp)) previous.set(steamid, { tick, hp });
+
+        if (before && weapon && before.weapon === weapon && Number.isFinite(ammo) && Number.isFinite(before.ammo) && ammo < before.ammo && before.ammo > 0) {
+          pushEvent(fireBySteam, steamid, { tick, shots: Math.max(1, before.ammo - ammo), weapon });
+        }
+
+        previous.set(steamid, {
+          tick,
+          hp: Number.isFinite(hp) ? hp : before?.hp,
+          ammo: Number.isFinite(ammo) ? ammo : null,
+          weapon
+        });
       }
     }
   }
@@ -32,18 +52,21 @@
     return events[lo]?.tick <= tick ? events[lo] : null;
   }
 
+  function playerPoint(player) {
+    if (!player?.is_alive || !Number.isFinite(player.X) || !Number.isFinite(player.Y)) return null;
+    return window.matchframeRadarFast?.worldToScreen?.(player.X, player.Y) || null;
+  }
+
   function drawDamageEffects(frame) {
     if (viewMode !== 'tactical' || !frame || !window.matchframeRadarFast) return;
     const life = tickRate() * .48;
     for (const player of frame.players || []) {
-      if (!player?.is_alive || !Number.isFinite(player.X) || !Number.isFinite(player.Y)) continue;
-      const steamid = String(player.steamid || '');
-      const hit = latestEvent(damageBySteam.get(steamid), currentTick);
+      const point = playerPoint(player);
+      if (!point) continue;
+      const hit = latestEvent(damageBySteam.get(String(player.steamid || '')), currentTick);
       if (!hit) continue;
       const elapsed = currentTick - hit.tick;
       if (elapsed < 0 || elapsed > life) continue;
-      const point = window.matchframeRadarFast.worldToScreen(player.X, player.Y);
-      if (!point) continue;
       const [x, y] = point;
       const t = Math.max(0, Math.min(1, elapsed / life));
       const pulse = .5 + .5 * Math.sin(performance.now() / 45);
@@ -62,9 +85,35 @@
     }
   }
 
+  function drawFireEffects(frame) {
+    if (viewMode !== 'tactical' || !frame || !window.matchframeRadarFast) return;
+    const life = tickRate() * .22;
+    for (const player of frame.players || []) {
+      const point = playerPoint(player);
+      if (!point) continue;
+      const shot = latestEvent(fireBySteam.get(String(player.steamid || '')), currentTick);
+      if (!shot) continue;
+      const elapsed = currentTick - shot.tick;
+      if (elapsed < 0 || elapsed > life) continue;
+      const [x, y] = point;
+      const t = Math.max(0, Math.min(1, elapsed / life));
+      const pulse = .5 + .5 * Math.sin(performance.now() / 28);
+      ctx.save();
+      ctx.globalAlpha = (1 - t) * (.72 + pulse * .26);
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = 'rgba(255,255,255,.98)';
+      ctx.strokeStyle = 'rgba(255,255,255,.98)';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.arc(x, y, 11 + pulse * 2.2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
   const previousLoadDemo = loadDemo;
   loadDemo = function(result) {
-    buildDamageIndex(result);
+    buildCombatIndex(result);
     previousLoadDemo(result);
   };
 
@@ -72,6 +121,8 @@
   drawCurrentFrame = function() {
     previousDraw();
     if (viewMode !== 'tactical') return;
-    drawDamageEffects(nearestFrame(currentTick));
+    const frame = nearestFrame(currentTick);
+    drawDamageEffects(frame);
+    drawFireEffects(frame);
   };
 })();
