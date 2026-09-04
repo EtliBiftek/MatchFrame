@@ -8,63 +8,151 @@
   let lastFps = 0;
   let sceneBounds = null;
   let lastGoodPlayer = null;
-  let needsVisibleResize = false;
   let renderableMeshCount = 0;
   let materialCount = 0;
+  let textureCount = 0;
+  let resizePending = true;
+  let contextLost = false;
+
+  // IMPORTANT: never let the Babylon canvas become display:none. Babylon has had a
+  // long-standing failure mode where resize() on a zero-sized/hidden canvas can grow the
+  // backing buffer by DPR repeatedly and eventually lose the WebGL context. MatchFrame used
+  // the global .hidden class on this canvas while the GLB was loading, which matches the
+  // red/orange compositor corruption followed by an all-black Electron window we observed.
+  const style = document.createElement('style');
+  style.textContent = `
+    #povCanvas.hidden{display:block!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+    #povCanvas{contain:strict;transform:translateZ(0);will-change:contents}
+    #viewport{isolation:isolate}
+  `;
+  document.head.appendChild(style);
+
+  function ensureCanvas() {
+    if (!canvas) canvas = document.getElementById('povCanvas');
+    if (!canvas) throw new Error('POV canvas bulunamadı.');
+    return canvas;
+  }
+
+  function cssRenderSize() {
+    ensureCanvas();
+    const rect = canvas.getBoundingClientRect();
+    if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 1 || rect.height <= 1) return null;
+
+    // POV intentionally renders at CSS-pixel resolution. A full CS2 map already consumes a
+    // lot of GPU memory; multiplying the render target by Windows DPR gives almost no useful
+    // replay detail but can be enough to evict the WebGL context.
+    const width = Math.max(2, Math.min(2560, Math.round(rect.width)));
+    const height = Math.max(2, Math.min(1440, Math.round(rect.height)));
+    return { width, height, cssWidth: rect.width, cssHeight: rect.height };
+  }
+
+  function syncRenderSize(force = false) {
+    if (!engine) return false;
+    const wanted = cssRenderSize();
+    if (!wanted) {
+      resizePending = true;
+      return false;
+    }
+    const currentW = Number(engine.getRenderWidth?.() || 0);
+    const currentH = Number(engine.getRenderHeight?.() || 0);
+    if (force || resizePending || Math.abs(currentW - wanted.width) > 1 || Math.abs(currentH - wanted.height) > 1) {
+      engine.setSize(wanted.width, wanted.height, true);
+      resizePending = false;
+    }
+    return true;
+  }
+
+  function disposeEngineOnly() {
+    try { engine?.stopRenderLoop?.(); } catch (_) {}
+    try { scene?.dispose?.(); } catch (_) {}
+    try { engine?.dispose?.(); } catch (_) {}
+    scene = null;
+    camera = null;
+    engine = null;
+    ready = false;
+    sceneBounds = null;
+    lastGoodPlayer = null;
+    renderableMeshCount = 0;
+    materialCount = 0;
+    textureCount = 0;
+    resizePending = true;
+  }
 
   function createScene() {
     if (!window.BABYLON) throw new Error('Babylon.js yüklenmedi.');
-    if (!canvas) canvas = document.getElementById('povCanvas');
-    if (!canvas) throw new Error('POV canvas bulunamadı.');
+    ensureCanvas();
+
+    // The canvas stays in layout even while visually hidden, so these dimensions are real.
+    if (!cssRenderSize()) throw new Error('POV görüntü alanı henüz boyutlandırılmadı.');
+
     if (!engine) {
       engine = new BABYLON.Engine(canvas, true, {
         preserveDrawingBuffer: false,
-        stencil: true,
-        adaptToDeviceRatio: true,
+        stencil: false,
+        adaptToDeviceRatio: false,
         powerPreference: 'high-performance'
       });
       engine.setHardwareScalingLevel(1);
+      engine.enableOfflineSupport = false;
+      syncRenderSize(true);
+
       engine.runRenderLoop(() => {
-        lastFps = engine.getFps();
-        if (scene && ready && !canvas.classList.contains('hidden')) {
-          if (needsVisibleResize) {
-            engine.resize(true);
-            needsVisibleResize = false;
-          }
+        lastFps = engine?.getFps?.() || 0;
+        if (!engine || !scene || !ready || contextLost || canvas.classList.contains('hidden')) return;
+        try {
+          syncRenderSize(false);
           scene.render();
+        } catch (error) {
+          console.error('[MatchFrame POV render]', error);
         }
       });
-      window.addEventListener('resize', () => engine?.resize(true));
-      new ResizeObserver(() => {
-        if (canvas && !canvas.classList.contains('hidden')) engine?.resize(true);
-      }).observe(document.getElementById('viewport'));
+
+      window.addEventListener('resize', () => { resizePending = true; });
+      const viewport = document.getElementById('viewport');
+      if (viewport) new ResizeObserver(() => { resizePending = true; }).observe(viewport);
+
+      canvas.addEventListener('webglcontextlost', (event) => {
+        // Preventing the default tells Chromium that restoration is allowed. Babylon also has
+        // its own context-loss handling; we only stop issuing new draws until restoration.
+        event.preventDefault();
+        contextLost = true;
+        resizePending = true;
+        console.warn('[MatchFrame POV] WebGL context lost');
+      }, false);
+      canvas.addEventListener('webglcontextrestored', () => {
+        contextLost = false;
+        resizePending = true;
+        syncRenderSize(true);
+        console.info('[MatchFrame POV] WebGL context restored');
+      }, false);
     }
+
     if (scene) scene.dispose();
     scene = new BABYLON.Scene(engine);
     scene.useRightHandedSystem = true;
     scene.clearColor = new BABYLON.Color4(0.035, 0.035, 0.043, 1);
     scene.skipPointerMovePicking = true;
+
     camera = new BABYLON.UniversalCamera('matchframe-pov', new BABYLON.Vector3(0, 1.6, 0), scene);
     camera.fov = BABYLON.Tools.ToRadians(90);
-    camera.minZ = 0.015;
+    camera.minZ = 0.025;
     camera.maxZ = 20000;
     camera.inputs.clear();
     camera.upVector.set(0, 1, 0);
     scene.activeCamera = camera;
 
-    // Direct lights are kept as a fallback for non-PBR materials. VRF map PBR materials are
-    // switched to unlit after import because this offline renderer has no Source 2 light probes / IBL.
     const hemi = new BABYLON.HemisphericLight('mf-hemi', new BABYLON.Vector3(0, 1, 0), scene);
-    hemi.intensity = 1.0;
+    hemi.intensity = 0.82;
     const sun = new BABYLON.DirectionalLight('mf-sun', new BABYLON.Vector3(-0.35, -0.8, 0.2), scene);
-    sun.intensity = 0.5;
+    sun.intensity = 0.72;
 
     ready = false;
     sceneBounds = null;
     lastGoodPlayer = null;
-    needsVisibleResize = true;
     renderableMeshCount = 0;
     materialCount = 0;
+    textureCount = 0;
+    resizePending = true;
     return scene;
   }
 
@@ -75,6 +163,7 @@
     for (const mesh of target.meshes || []) {
       if (!mesh || typeof mesh.getBoundingInfo !== 'function' || !mesh.getTotalVertices?.()) continue;
       try {
+        if (mesh.getTotalVertices() <= 0) continue;
         mesh.computeWorldMatrix(true);
         const box = mesh.getBoundingInfo().boundingBox;
         const lo = box.minimumWorld;
@@ -89,20 +178,59 @@
     return count ? { min, max } : null;
   }
 
-  function stabilizeImportedMaterials(target) {
-    materialCount = target.materials?.length || 0;
-    for (const material of target.materials || []) {
+  function installStableGeometryMaterial(target) {
+    const importedMaterials = [...(target.materials || [])];
+    const importedTextures = [...(target.textures || [])];
+    materialCount = importedMaterials.length;
+    textureCount = importedTextures.length;
+
+    const stable = new BABYLON.StandardMaterial('mf-stable-map', target);
+    stable.diffuseColor = new BABYLON.Color3(0.48, 0.50, 0.53);
+    stable.ambientColor = new BABYLON.Color3(0.18, 0.18, 0.19);
+    stable.specularColor = new BABYLON.Color3(0.02, 0.02, 0.02);
+    stable.backFaceCulling = false;
+    stable.twoSidedLighting = true;
+
+    for (const mesh of target.meshes || []) {
       try {
-        // VRF exports Source 2 materials as glTF PBR. Without Source's environment/light-probe
-        // data, highly metallic PBR surfaces can evaluate to almost pure black in Babylon.
-        // Fullbright/unlit preserves the exported albedo/texture while remaining completely offline.
-        if (BABYLON.PBRMaterial && material instanceof BABYLON.PBRMaterial) {
-          material.unlit = true;
-          material.environmentIntensity = 0;
-        } else if ('disableLighting' in material) {
-          material.disableLighting = true;
-        }
+        if (!mesh?.getTotalVertices?.() || mesh.getTotalVertices() <= 0) continue;
+        // VRF currently has map exports where vertex colour/alpha can produce the giant
+        // red/orange polygons visible in the user's screenshot. Ignore all vertex tinting.
+        mesh.useVertexColors = false;
+        mesh.hasVertexAlpha = false;
+        mesh.material = stable;
       } catch (_) {}
+    }
+
+    // Even if skipMaterials is ignored by an older loader, release every imported texture and
+    // material after replacing them. This keeps the full map geometry while dropping the main
+    // source of GPU-memory/context-loss pressure.
+    for (const material of importedMaterials) {
+      if (material !== stable) {
+        try { material.dispose(true, true); } catch (_) {}
+      }
+    }
+    for (const texture of importedTextures) {
+      try { texture.dispose(); } catch (_) {}
+    }
+  }
+
+  async function appendGeometryOnly(target, url) {
+    // Babylon's glTF loader exposes skipMaterials. Setting it on plugin activation means the
+    // embedded textures in VRF's large GLB are not decoded/uploaded to the GPU at all.
+    let observer = null;
+    const observable = BABYLON.SceneLoader?.OnPluginActivatedObservable;
+    if (observable?.add) {
+      observer = observable.add((plugin) => {
+        try {
+          if (plugin && 'skipMaterials' in plugin) plugin.skipMaterials = true;
+        } catch (_) {}
+      });
+    }
+    try {
+      await BABYLON.SceneLoader.AppendAsync('', url, target, undefined, '.glb');
+    } finally {
+      if (observer && observable?.remove) observable.remove(observer);
     }
   }
 
@@ -110,30 +238,29 @@
     if (ready && loadedUrl === url) return;
     const target = createScene();
     try {
-      await BABYLON.SceneLoader.AppendAsync('', url, target, undefined, '.glb');
+      await appendGeometryOnly(target, url);
       for (const item of [...target.cameras]) {
         if (item !== camera) item.dispose();
       }
       target.activeCamera = camera;
-      stabilizeImportedMaterials(target);
+      installStableGeometryMaterial(target);
       sceneBounds = calculateSceneBounds(target);
       if (!sceneBounds || renderableMeshCount === 0) {
-        throw new Error('GLB yüklendi fakat render edilebilir map mesh’i bulunamadı. POV cache yeniden oluşturulmalı.');
+        throw new Error('GLB yüklendi fakat render edilebilir map mesh’i bulunamadı.');
       }
       loadedUrl = url;
       ready = true;
-      needsVisibleResize = true;
-      // The canvas is normally display:none while the GLB is prepared. Resizing here alone can
-      // therefore produce a 0x0 render target. setPlayer/renderLoop force a second resize after unhide.
-      engine.resize(true);
+      resizePending = true;
+      syncRenderSize(true);
     } catch (error) {
       ready = false;
       throw new Error(`Offline map yüklenemedi: ${error?.message || error}`);
     }
   }
 
-  // ValveResourceFormat's SourceToGltfRotation maps Source +X -> glTF +Z,
-  // Source +Y -> glTF +X and Source +Z -> glTF +Y; Source inches become metres.
+  // ValveResourceFormat SourceToGltfRotation:
+  // Source +X -> glTF +Z, Source +Y -> glTF +X, Source +Z -> glTF +Y.
+  // Source units are inches and glTF units are metres.
   function sourceToGltf(x, y, z) {
     const u = 0.0254;
     return new BABYLON.Vector3(Number(y) * u, Number(z) * u, Number(x) * u);
@@ -158,8 +285,6 @@
     if (!position || ![position.x, position.y, position.z].every(Number.isFinite)) return false;
     if (!sceneBounds) return true;
     const size = sceneBounds.max.subtract(sceneBounds.min);
-    // Map exports can include separated sky/prop geometry. Be generous here and reject only
-    // coordinates that are clearly unrelated to the loaded map.
     const margin = Math.max(25, Math.max(size.x, size.y, size.z) * 0.35);
     return position.x >= sceneBounds.min.x - margin && position.x <= sceneBounds.max.x + margin &&
       position.y >= sceneBounds.min.y - margin && position.y <= sceneBounds.max.y + margin &&
@@ -176,22 +301,8 @@
     return positionLooksUsable(sourceToGltf(X, Y, Z + eyeHeight));
   }
 
-  function ensureVisibleRenderSize() {
-    if (!engine || !canvas || canvas.classList.contains('hidden')) return;
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width <= 1 || rect.height <= 1) {
-      needsVisibleResize = true;
-      return;
-    }
-    if (needsVisibleResize || engine.getRenderWidth() <= 1 || engine.getRenderHeight() <= 1) {
-      engine.resize(true);
-      needsVisibleResize = false;
-      requestAnimationFrame(() => engine?.resize(true));
-    }
-  }
-
   function setPlayer(player) {
-    if (!ready || !camera || !player) return false;
+    if (!ready || !camera || !player || contextLost) return false;
     let state = player;
     if (!usablePlayer(state)) {
       if (!lastGoodPlayer || !usablePlayer(lastGoodPlayer)) return false;
@@ -200,7 +311,7 @@
       lastGoodPlayer = { ...state };
     }
 
-    ensureVisibleRenderSize();
+    syncRenderSize(false);
 
     const X = Number(state.X), Y = Number(state.Y), Z = Number(state.Z);
     const duck = Math.max(0, Math.min(1, Number(state.duck_amount || 0)));
@@ -220,18 +331,25 @@
 
   function isReady() { return ready; }
   function resize() {
-    needsVisibleResize = true;
-    ensureVisibleRenderSize();
+    resizePending = true;
+    if (!canvas?.classList.contains('hidden')) syncRenderSize(false);
   }
   function fps() { return lastFps; }
   function isPlayerUsable(player) { return usablePlayer(player); }
   function diagnostics() {
+    const wanted = cssRenderSize();
     return {
       ready,
+      contextLost,
       renderableMeshCount,
       materialCount,
+      textureCount,
       renderWidth: engine?.getRenderWidth?.() || 0,
       renderHeight: engine?.getRenderHeight?.() || 0,
+      canvasWidth: canvas?.width || 0,
+      canvasHeight: canvas?.height || 0,
+      cssWidth: wanted?.cssWidth || 0,
+      cssHeight: wanted?.cssHeight || 0,
       bounds: sceneBounds ? {
         min: { x: sceneBounds.min.x, y: sceneBounds.min.y, z: sceneBounds.min.z },
         max: { x: sceneBounds.max.x, y: sceneBounds.max.y, z: sceneBounds.max.z }
@@ -240,13 +358,8 @@
   }
   function reset() {
     loadedUrl = null;
-    ready = false;
-    sceneBounds = null;
-    lastGoodPlayer = null;
-    needsVisibleResize = true;
-    renderableMeshCount = 0;
-    materialCount = 0;
-    if (scene) { scene.dispose(); scene = null; }
+    contextLost = false;
+    disposeEngineOnly();
   }
 
   window.matchframePov = { load, setPlayer, isReady, resize, fps, reset, isPlayerUsable, diagnostics };
