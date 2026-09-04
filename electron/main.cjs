@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, desktopCapturer, session } = require('electron');
 const { Worker } = require('node:worker_threads');
 const { spawn, execFile } = require('node:child_process');
 const fs = require('node:fs');
@@ -12,11 +12,11 @@ const pending = new Map();
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 1050,
-    minHeight: 680,
-    backgroundColor: '#090b10',
+    width: 1480,
+    height: 920,
+    minWidth: 1080,
+    minHeight: 700,
+    backgroundColor: '#0b0b0d',
     frame: false,
     show: false,
     webPreferences: {
@@ -101,12 +101,34 @@ function steamCandidates() {
 
 async function launchDemo(file) {
   const steam = steamCandidates().find(fs.existsSync);
-  if (!steam) throw new Error('Steam.exe bulunamadı. Steam kurulum yolu ayarı sonraki buildde eklenecek.');
+  if (!steam) throw new Error('Steam.exe bulunamadı.');
   execFile(steam, ['-applaunch', '730', '+playdemo', file], { windowsHide: false });
   return true;
 }
 
+async function findCs2CaptureSource() {
+  const sources = await desktopCapturer.getSources({
+    types: ['window'],
+    thumbnailSize: { width: 0, height: 0 },
+    fetchWindowIcons: false
+  });
+  return sources.find((source) => /counter[- ]?strike\s*2|\bcs2\b/i.test(source.name)) || null;
+}
+
+function configureDisplayCapture() {
+  session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
+    try {
+      const source = await findCs2CaptureSource();
+      if (!source) return callback({});
+      callback({ video: source });
+    } catch (_) {
+      callback({});
+    }
+  });
+}
+
 app.whenReady().then(() => {
+  configureDisplayCapture();
   startCore();
   createWindow();
 });
@@ -137,6 +159,11 @@ ipcMain.handle('demo:open', async () => {
 ipcMain.handle('demo:launch', async (_event, file) => {
   await launchDemo(file);
   return { ok: true };
+});
+
+ipcMain.handle('capture:status', async () => {
+  const source = await findCs2CaptureSource();
+  return { available: Boolean(source), name: source?.name || null };
 });
 
 ipcMain.handle('core:status', async () => coreRequest('backend_info'));
