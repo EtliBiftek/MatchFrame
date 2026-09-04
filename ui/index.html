@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self' blob:; style-src 'self'; script-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: matchframe:; media-src 'self' blob: file: matchframe:; connect-src 'self' matchframe:; style-src 'self'; script-src 'self'" />
   <title>MatchFrame</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="titlebar">
-    <div class="brand"><span class="brand-mark">MF</span><span class="brand-name">MatchFrame</span><span class="version">0.2.1</span></div>
+    <div class="brand"><span class="brand-mark">MF</span><span class="brand-name">MatchFrame</span><span class="version">0.3</span></div>
     <div class="drag-region"></div>
     <div class="window-controls">
       <button id="minimize" aria-label="Küçült">—</button>
@@ -38,7 +38,7 @@
         <div class="head-copy">
           <div class="eyebrow">CS2 DEMO WORKSPACE</div>
           <h1 id="matchTitle">Bir demo seç</h1>
-          <p id="matchSubtitle">Demo analizi, reconstructed replay ve gerçek CS2 POV tek yerde.</p>
+          <p id="matchSubtitle">Demo analizi, radar replay ve CS2 açmadan gerçek map POV.</p>
         </div>
         <div class="head-actions">
           <button id="launchBtn" class="btn secondary" disabled>CS2'de aç</button>
@@ -54,23 +54,23 @@
               <span id="mapBadge" class="badge">NO DEMO</span>
             </div>
             <div class="view-tabs" role="tablist">
-              <button id="tacticalTab" class="view-tab active">Reconstructed</button>
+              <button id="tacticalTab" class="view-tab active">Radar</button>
               <button id="povTab" class="view-tab">Gerçek POV</button>
             </div>
           </div>
 
           <div class="viewport" id="viewport">
             <canvas id="replayCanvas"></canvas>
-            <video id="povVideo" class="pov-video hidden" autoplay muted playsinline></video>
+            <canvas id="povCanvas" class="pov-canvas hidden"></canvas>
             <div id="emptyState" class="empty-state">
               <div class="empty-mark">MF</div>
               <strong>Demo bekleniyor</strong>
-              <span>.dem dosyasını yüklediğinde MatchFrame oyuncu hareketlerini burada oynatacak.</span>
+              <span>.dem dosyasını yüklediğinde replay burada hazırlanacak.</span>
             </div>
-            <div id="captureState" class="capture-state hidden">
+            <div id="povState" class="capture-state hidden">
               <div class="capture-spinner"></div>
-              <strong id="captureTitle">CS2 görüntüsü bekleniyor</strong>
-              <span id="captureText">Gerçek POV, CS2 penceresini MatchFrame içine yansıtır.</span>
+              <strong id="povStateTitle">Offline POV hazırlanıyor</strong>
+              <span id="povStateText">İlk kullanımda Source 2 map dosyası hazırlanabilir.</span>
             </div>
             <div id="viewerWarning" class="viewer-warning hidden"></div>
             <div id="povHud" class="pov-hud hidden">
@@ -81,11 +81,15 @@
           </div>
 
           <div class="transport">
-            <button id="backTick" class="transport-btn">−64</button>
+            <button id="prevRound" class="transport-btn round-jump">← Tur</button>
             <button id="pauseBtn" class="play-btn">▶</button>
-            <button id="forwardTick" class="transport-btn">+64</button>
-            <span id="tickLabel" class="tick-label">Tick 0 / 0</span>
-            <input id="timeline" type="range" min="0" max="1" value="0" />
+            <button id="nextRound" class="transport-btn round-jump">Tur →</button>
+            <span id="timeLabel" class="time-label">00:00 / 00:00</span>
+            <div class="timeline-wrap">
+              <div id="timelineMarkers" class="timeline-markers"></div>
+              <input id="timeline" type="range" min="0" max="1" value="0" aria-label="Demo zamanı" />
+            </div>
+            <select id="roundSelect" aria-label="Tur seç"><option value="">Tur —</option></select>
             <select id="speed" aria-label="Oynatma hızı">
               <option value="0.25">0.25×</option>
               <option value="0.5">0.5×</option>
@@ -99,15 +103,8 @@
         <aside class="panel players-panel">
           <div class="panel-head"><span class="panel-title">Oyuncular</span><span id="playerCount" class="badge">0</span></div>
           <div id="playersList" class="players-list"><div class="small-empty">Demo bekleniyor</div></div>
+          <div id="voiceStatus" class="voice-status hidden">Oyun içi ses hazırlanıyor…</div>
         </aside>
-      </section>
-
-      <section class="panel timeline-panel">
-        <div class="panel-head">
-          <span class="panel-title">Round timeline</span>
-          <span id="eventCount" class="badge">0 EVENTS</span>
-        </div>
-        <div id="eventRail" class="event-rail"><span class="rail-empty">Round event'leri burada görünecek.</span></div>
       </section>
 
       <footer class="statusbar">
@@ -128,6 +125,9 @@
     </div>
   </section>
 
+  <script src="../node_modules/babylonjs/babylon.js"></script>
+  <script src="../node_modules/babylonjs-loaders/babylonjs.loaders.min.js"></script>
+  <script src="pov.js"></script>
   <script src="app.js"></script>
   <script src="radar.js"></script>
 </body>
