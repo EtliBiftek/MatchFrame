@@ -55,10 +55,7 @@ function mfRadarViewport(width, height) {
   const aspect = image.naturalWidth / Math.max(1, image.naturalHeight);
   let w = maxW;
   let h = w / aspect;
-  if (h > maxH) {
-    h = maxH;
-    w = h * aspect;
-  }
+  if (h > maxH) { h = maxH; w = h * aspect; }
   return { x: (width - w) / 2, y: (height - h) / 2, w, h };
 }
 
@@ -68,24 +65,16 @@ function mfWorldToScreen(worldX, worldY, viewport) {
   const radarY = (overview.posY - Number(worldY)) / overview.scale;
   const imageW = Math.max(1, mfRadarImage.naturalWidth);
   const imageH = Math.max(1, mfRadarImage.naturalHeight);
-  return [
-    viewport.x + (radarX / imageW) * viewport.w,
-    viewport.y + (radarY / imageH) * viewport.h
-  ];
+  return [viewport.x + (radarX / imageW) * viewport.w, viewport.y + (radarY / imageH) * viewport.h];
 }
 
 drawCurrentFrame = function() {
   if (viewMode !== 'tactical') return;
-  if (!mfRadarAsset || !mfRadarImage) {
-    mfOriginalDrawCurrentFrame();
-    return;
-  }
-
+  if (!mfRadarAsset || !mfRadarImage) { mfOriginalDrawCurrentFrame(); return; }
   const { width, height } = resizeCanvas();
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = '#09090b';
   ctx.fillRect(0, 0, width, height);
-
   const viewport = mfRadarViewport(width, height);
   ctx.save();
   ctx.imageSmoothingEnabled = true;
@@ -96,70 +85,40 @@ drawCurrentFrame = function() {
   ctx.lineWidth = 1;
   ctx.strokeRect(viewport.x + .5, viewport.y + .5, viewport.w - 1, viewport.h - 1);
   ctx.restore();
-
   const frame = nearestFrame(currentTick);
   if (!frame) return;
-  const selectedSteam = String(selectedPlayer?.steamid || '');
-  const selectedName = String(selectedPlayer?.name || '');
-  const selected = frame.players.find((p) =>
-    (selectedSteam && String(p.steamid) === selectedSteam) || (!selectedSteam && p.name === selectedName)
-  );
-
+  const selected = playerInFrame(frame, selectedPlayer);
   if (selected && Number.isFinite(selected.X) && Number.isFinite(selected.Y)) {
     const [px, py] = mfWorldToScreen(selected.X, selected.Y, viewport);
     drawVision(px, py, Number(selected.yaw || 0), Math.min(viewport.w, viewport.h) * .19);
   }
-
   for (const player of frame.players) {
     if (!Number.isFinite(player.X) || !Number.isFinite(player.Y)) continue;
     const [x, y] = mfWorldToScreen(player.X, player.Y, viewport);
     if (x < viewport.x - 12 || x > viewport.x + viewport.w + 12 || y < viewport.y - 12 || y > viewport.y + viewport.h + 12) continue;
-
     const isSelected = selected && String(player.steamid) === String(selected.steamid);
     const alive = player.is_alive && player.health > 0;
     const color = Number(player.team_num) === 2 ? '#d2ad69' : Number(player.team_num) === 3 ? '#79a7c7' : '#9a9aa2';
-
     ctx.save();
     ctx.globalAlpha = alive ? 1 : .3;
     if (isSelected) {
-      ctx.beginPath();
-      ctx.arc(x, y, 10, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(10,10,12,.72)';
-      ctx.fill();
-      ctx.strokeStyle = '#f4f4f5';
-      ctx.lineWidth = 1.7;
-      ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fillStyle = 'rgba(10,10,12,.72)'; ctx.fill();
+      ctx.strokeStyle = '#f4f4f5'; ctx.lineWidth = 1.7; ctx.stroke();
     }
-
-    ctx.beginPath();
-    ctx.arc(x, y, isSelected ? 6 : 5, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,.55)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
+    ctx.beginPath(); ctx.arc(x, y, isSelected ? 6 : 5, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 1; ctx.stroke();
     const rad = (Number(player.yaw || 0) - 90) * Math.PI / 180;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + Math.cos(rad) * 14, y + Math.sin(rad) * 14);
-    ctx.strokeStyle = isSelected ? '#f4f4f5' : color;
-    ctx.lineWidth = 1.6;
-    ctx.stroke();
-
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(rad) * 14, y + Math.sin(rad) * 14);
+    ctx.strokeStyle = isSelected ? '#f4f4f5' : color; ctx.lineWidth = 1.6; ctx.stroke();
     if (isSelected || width > 760) {
-      ctx.font = '10px "Segoe UI", sans-serif';
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'rgba(0,0,0,.9)';
-      ctx.strokeText(player.name || 'Player', x + 9, y - 8);
-      ctx.fillStyle = isSelected ? '#fff' : '#d3d3d8';
+      ctx.font = '10px "Segoe UI", sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.9)';
+      ctx.strokeText(player.name || 'Player', x + 9, y - 8); ctx.fillStyle = isSelected ? '#fff' : '#d3d3d8';
       ctx.fillText(player.name || 'Player', x + 9, y - 8);
     }
     ctx.restore();
   }
-
   updateSelectedHud(frame);
   ctx.font = '9px Consolas, monospace';
   ctx.fillStyle = 'rgba(240,240,242,.48)';
-  ctx.fillText(`VALVE RADAR · ${mfRadarAsset.map.toUpperCase()} · TICK ${frame.tick}`, viewport.x + 10, viewport.y + viewport.h - 10);
+  ctx.fillText(`VALVE RADAR · ${mfRadarAsset.map.toUpperCase()} · ${formatTick(frame.tick)}`, viewport.x + 10, viewport.y + viewport.h - 10);
 };
