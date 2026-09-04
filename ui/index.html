@@ -3,89 +3,129 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self' blob:; style-src 'self'; script-src 'self'" />
   <title>MatchFrame</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="titlebar">
-    <div class="brand"><span class="brand-mark">MF</span><span>MatchFrame</span><span class="alpha">0.1</span></div>
+    <div class="brand"><span class="brand-mark">MF</span><span class="brand-name">MatchFrame</span><span class="version">0.2</span></div>
     <div class="drag-region"></div>
     <div class="window-controls">
-      <button id="minimize">—</button><button id="maximize">□</button><button id="close">×</button>
+      <button id="minimize" aria-label="Küçült">—</button>
+      <button id="maximize" aria-label="Büyüt">□</button>
+      <button id="close" aria-label="Kapat">×</button>
     </div>
   </header>
 
   <div class="shell">
-    <aside class="sidebar">
-      <button class="nav active"><span>◫</span> Replay</button>
-      <button class="nav"><span>⌁</span> Analysis</button>
-      <button class="nav"><span>◎</span> Aim</button>
-      <button class="nav"><span>◇</span> Utility</button>
-      <div class="sidebar-spacer"></div>
-      <div class="core-card">
-        <div class="status-row"><span id="coreDot" class="dot"></span><span id="coreLabel">Core...</span></div>
-        <div class="status-row"><span id="cs2Dot" class="dot"></span><span id="cs2Label">CS2 aranıyor</span></div>
-      </div>
+    <aside class="rail">
+      <div class="rail-logo">MF</div>
+      <nav>
+        <button class="rail-item active" data-label="Replay"><span class="rail-icon">▣</span></button>
+        <button class="rail-item" data-label="Analysis"><span class="rail-icon">⌁</span></button>
+        <button class="rail-item" data-label="Aim"><span class="rail-icon">◎</span></button>
+        <button class="rail-item" data-label="Utility"><span class="rail-icon">◇</span></button>
+      </nav>
+      <div class="rail-spacer"></div>
+      <div class="rail-status" title="Backend durumu"><i id="coreDot"></i></div>
+      <div class="rail-status" title="CS2 durumu"><i id="cs2Dot"></i></div>
+      <div class="rail-word">MATCHFRAME</div>
     </aside>
 
     <main class="workspace">
-      <section class="topbar">
-        <div>
-          <div class="eyebrow">DEMO WORKSPACE</div>
-          <h1 id="matchTitle">Bir CS2 demosu aç</h1>
-          <div id="matchSubtitle" class="subtitle">POV, timeline ve analiz tek yerde.</div>
+      <section class="workspace-head">
+        <div class="head-copy">
+          <div class="eyebrow">CS2 DEMO WORKSPACE</div>
+          <h1 id="matchTitle">Bir demo seç</h1>
+          <p id="matchSubtitle">Demo analizi, reconstructed replay ve gerçek CS2 POV tek yerde.</p>
         </div>
-        <div class="top-actions">
-          <button id="launchBtn" class="button secondary" disabled>CS2'de aç</button>
-          <button id="openBtn" class="button primary">Demo Aç</button>
+        <div class="head-actions">
+          <button id="launchBtn" class="btn secondary" disabled>CS2'de aç</button>
+          <button id="openBtn" class="btn primary">Demo Aç</button>
         </div>
       </section>
 
-      <section class="content-grid">
-        <div class="stage panel">
-          <div class="panel-head"><span>Replay viewport</span><span id="mapBadge" class="badge">NO DEMO</span></div>
+      <section class="viewer-grid">
+        <article class="panel viewer-panel">
+          <div class="panel-head">
+            <div class="panel-title-group">
+              <span class="panel-title">Replay</span>
+              <span id="mapBadge" class="badge">NO DEMO</span>
+            </div>
+            <div class="view-tabs" role="tablist">
+              <button id="tacticalTab" class="view-tab active">Reconstructed</button>
+              <button id="povTab" class="view-tab">Gerçek POV</button>
+            </div>
+          </div>
+
           <div class="viewport" id="viewport">
-            <div class="crosshair"><i></i><i></i></div>
-            <div class="empty-state">
-              <div class="empty-icon">MF</div>
-              <strong>Demo yüklenmedi</strong>
-              <span>.dem dosyasını açınca oyuncular ve timeline burada hazırlanacak.</span>
+            <canvas id="replayCanvas"></canvas>
+            <video id="povVideo" class="pov-video hidden" autoplay muted playsinline></video>
+            <div id="emptyState" class="empty-state">
+              <div class="empty-mark">MF</div>
+              <strong>Demo bekleniyor</strong>
+              <span>.dem dosyasını yüklediğinde MatchFrame oyuncu hareketlerini burada oynatacak.</span>
             </div>
-            <div id="playerOverlay" class="player-overlay hidden">
-              <div class="selected-name" id="selectedName">Player</div>
-              <div class="selected-meta" id="selectedMeta">POV selected</div>
+            <div id="captureState" class="capture-state hidden">
+              <div class="capture-spinner"></div>
+              <strong id="captureTitle">CS2 görüntüsü bekleniyor</strong>
+              <span id="captureText">Gerçek POV, CS2 penceresini MatchFrame içine yansıtır.</span>
             </div>
+            <div id="viewerWarning" class="viewer-warning hidden"></div>
+            <div id="povHud" class="pov-hud hidden">
+              <div><span class="hud-kicker">POV</span><strong id="selectedName">Player</strong></div>
+              <div class="hud-meta"><span id="selectedTeam">—</span><span id="selectedHealth">100 HP</span><span id="selectedYaw">0°</span></div>
+            </div>
+            <div class="viewport-grid"></div>
           </div>
 
           <div class="transport">
-            <button id="backTick" class="icon-button">−64</button>
-            <button id="pauseBtn" class="play-button">▶</button>
-            <button id="forwardTick" class="icon-button">+64</button>
+            <button id="backTick" class="transport-btn">−64</button>
+            <button id="pauseBtn" class="play-btn">▶</button>
+            <button id="forwardTick" class="transport-btn">+64</button>
             <span id="tickLabel" class="tick-label">Tick 0 / 0</span>
             <input id="timeline" type="range" min="0" max="1" value="0" />
-            <select id="speed">
-              <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option>
+            <select id="speed" aria-label="Oynatma hızı">
+              <option value="0.25">0.25×</option>
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+              <option value="4">4×</option>
             </select>
           </div>
-        </div>
+        </article>
 
-        <aside class="players panel">
-          <div class="panel-head"><span>Players</span><span id="playerCount" class="badge">0</span></div>
+        <aside class="panel players-panel">
+          <div class="panel-head"><span class="panel-title">Oyuncular</span><span id="playerCount" class="badge">0</span></div>
           <div id="playersList" class="players-list"><div class="small-empty">Demo bekleniyor</div></div>
         </aside>
       </section>
 
-      <section class="events panel">
-        <div class="panel-head"><span>Round timeline</span><span id="eventCount" class="badge">0 EVENTS</span></div>
+      <section class="panel timeline-panel">
+        <div class="panel-head">
+          <span class="panel-title">Round timeline</span>
+          <span id="eventCount" class="badge">0 EVENTS</span>
+        </div>
         <div id="eventRail" class="event-rail"><span class="rail-empty">Round event'leri burada görünecek.</span></div>
       </section>
+
+      <footer class="statusbar">
+        <span><i id="coreDotFooter" class="status-dot"></i><span id="coreLabel">Core…</span></span>
+        <span><i id="cs2DotFooter" class="status-dot"></i><span id="cs2Label">CS2 aranıyor</span></span>
+        <span id="viewerLabel">Viewer idle</span>
+      </footer>
     </main>
   </div>
 
   <section id="consolePanel" class="console-panel" aria-hidden="true">
     <div class="console-head"><span>MATCHFRAME // CS2 CONSOLE</span><span>` / ~ ile kapat</span></div>
     <div id="consoleOutput" class="console-output"><div class="log system">MatchFrame console ready. "help" yazarak başlayabilirsin.</div></div>
-    <div class="console-input-row"><span class="prompt">&gt;</span><input id="consoleInput" autocomplete="off" spellcheck="false" placeholder="demo_gototick 12000" /><div id="suggestions" class="suggestions"></div></div>
+    <div class="console-input-row">
+      <span class="prompt">›</span>
+      <input id="consoleInput" autocomplete="off" spellcheck="false" placeholder="demo_gototick 12000" />
+      <div id="suggestions" class="suggestions"></div>
+    </div>
   </section>
 
   <script src="app.js"></script>
