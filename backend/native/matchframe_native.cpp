@@ -71,21 +71,26 @@ extern "C" int32_t mf_send_console_command(const char* utf8, size_t length) {
     std::wstring wide(static_cast<size_t>(needed), L'\0');
     MultiByteToWideChar(CP_UTF8, 0, utf8, static_cast<int>(length), wide.data(), needed);
 
+    HWND previous = GetForegroundWindow();
     ShowWindow(search.window, SW_RESTORE);
     SetForegroundWindow(search.window);
-    Sleep(60);
-    key_press(VK_OEM_3);
     Sleep(70);
+    key_press(VK_OEM_3);
+    Sleep(80);
     type_unicode(wide);
     key_press(VK_RETURN);
+    Sleep(50);
+    key_press(VK_OEM_3);
+    Sleep(45);
+    if (previous && previous != search.window && IsWindow(previous)) SetForegroundWindow(previous);
     return 0;
 }
 
 extern "C" int32_t mf_native_abs_probe(int32_t value) { return mf_fast_abs_i32(value); }
-extern "C" const char* mf_native_version() { return "cpp-win32+asm-v1"; }
+extern "C" const char* mf_native_version() { return "cpp-win32+asm-v2"; }
 #else
 extern "C" int32_t mf_cs2_running() { return 0; }
 extern "C" int32_t mf_send_console_command(const char*, size_t) { return -100; }
 extern "C" int32_t mf_native_abs_probe(int32_t value) { return value < 0 ? -value : value; }
-extern "C" const char* mf_native_version() { return "cpp-portable-v1"; }
+extern "C" const char* mf_native_version() { return "cpp-portable-v2"; }
 #endif
