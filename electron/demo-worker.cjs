@@ -28,9 +28,15 @@ function buildFrames(rows) {
       Z: finite(row.Z),
       pitch: finite(row.pitch) ?? 0,
       yaw: finite(row.yaw) ?? 0,
+      fov: finite(row.fov) ?? 90,
+      duck_amount: finite(row.duck_amount) ?? 0,
+      in_crouch: Boolean(row.in_crouch),
       health: finite(row.health) ?? 0,
+      armor: finite(row.armor) ?? 0,
       is_alive: Boolean(row.is_alive),
-      team_num: finite(row.team_num) ?? 0
+      team_num: finite(row.team_num) ?? 0,
+      active_weapon_name: String(row.active_weapon_name ?? ''),
+      active_weapon_ammo: finite(row.active_weapon_ammo)
     });
   }
   return [...byTick.values()].sort((a, b) => a.tick - b.tick);
@@ -85,7 +91,6 @@ function buildRoundMeta(roundStarts, roundEnds, maxTick) {
     .filter((x) => x.tick >= 0 && !x.warmup)
     .sort((a, b) => a.tick - b.tick);
 
-  // Some demos duplicate round_start packets. Keep one start per nearby tick.
   starts = starts.filter((item, index) => index === 0 || item.tick - starts[index - 1].tick > 16);
 
   const ends = [...roundEnds].map(eventTick).filter((x) => x > 0).sort((a, b) => a - b);
@@ -134,7 +139,9 @@ parentPort.on('message', ({ file }) => {
       const wantedTicks = [];
       for (let tick = 0; tick <= maxTick; tick += sampleStep) wantedTicks.push(tick);
       try {
-        const rows = parseTicks(file, ['X', 'Y', 'Z', 'pitch', 'yaw', 'health', 'is_alive', 'team_num'], wantedTicks);
+        const rows = parseTicks(file, [
+          'X','Y','Z','pitch','yaw','fov','duck_amount','in_crouch','health','armor','is_alive','team_num','active_weapon_name','active_weapon_ammo'
+        ], wantedTicks);
         frames = buildFrames(rows);
         if (frames.length) maxTick = Math.max(maxTick, frames[frames.length - 1].tick);
       } catch (error) {
