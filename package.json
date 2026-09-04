@@ -1,6 +1,6 @@
 {
   "name": "matchframe",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CS2 demo POV viewer, timeline workstation and match analysis desktop app",
   "main": "electron/main.cjs",
   "author": "EtliBiftek",
@@ -9,7 +9,7 @@
     "start": "electron .",
     "build:backend": "cargo build --manifest-path backend/Cargo.toml --release",
     "dist": "electron-builder --win portable nsis --x64 --publish never",
-    "dist:dir": "electron-builder --dir --win --x64 --publish never"
+    "dist:dir": "electron-builder --dir --win --x64"
   },
   "dependencies": {
     "@laihoe/demoparser2": "0.42.0"
