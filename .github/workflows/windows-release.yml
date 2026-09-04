@@ -42,6 +42,18 @@ jobs:
         shell: pwsh
         run: npm install
 
+      - name: Validate JavaScript syntax
+        shell: pwsh
+        run: |
+          node --check electron/bootstrap.cjs
+          node --check electron/main.cjs
+          node --check electron/demo-worker.cjs
+          node --check electron/preload.cjs
+          node --check ui/app.js
+          node --check ui/pov.js
+          node --check ui/radar.js
+          node --check ui/enhance.js
+
       - name: Generate Ruby analytics defaults
         shell: pwsh
         run: |
