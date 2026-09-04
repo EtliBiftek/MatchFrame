@@ -8,7 +8,7 @@ const crypto = require('node:crypto');
 const { pathToFileURL } = require('node:url');
 
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'matchframe', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }
+  { scheme: 'matchframe', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }
 ]);
 
 let mainWindow;
