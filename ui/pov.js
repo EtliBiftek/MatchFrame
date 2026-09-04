@@ -6,6 +6,8 @@
   let loadedUrl = null;
   let ready = false;
   let lastFps = 0;
+  let sceneBounds = null;
+  let lastGoodPlayer = null;
 
   function createScene() {
     if (!window.BABYLON) throw new Error('Babylon.js yüklenmedi.');
@@ -32,7 +34,7 @@
     scene.clearColor = new BABYLON.Color4(0.035, 0.035, 0.043, 1);
     camera = new BABYLON.UniversalCamera('matchframe-pov', new BABYLON.Vector3(0, 1.6, 0), scene);
     camera.fov = BABYLON.Tools.ToRadians(90);
-    camera.minZ = 0.03;
+    camera.minZ = 0.02;
     camera.maxZ = 20000;
     camera.inputs.clear();
     camera.upVector.set(0, 1, 0);
@@ -42,7 +44,29 @@
     const sun = new BABYLON.DirectionalLight('mf-sun', new BABYLON.Vector3(-0.35, -0.8, 0.2), scene);
     sun.intensity = 0.38;
     ready = false;
+    sceneBounds = null;
+    lastGoodPlayer = null;
     return scene;
+  }
+
+  function calculateSceneBounds(target) {
+    let min = new BABYLON.Vector3(Infinity, Infinity, Infinity);
+    let max = new BABYLON.Vector3(-Infinity, -Infinity, -Infinity);
+    let count = 0;
+    for (const mesh of target.meshes || []) {
+      if (!mesh || typeof mesh.getBoundingInfo !== 'function' || !mesh.getTotalVertices?.()) continue;
+      try {
+        mesh.computeWorldMatrix(true);
+        const box = mesh.getBoundingInfo().boundingBox;
+        const lo = box.minimumWorld;
+        const hi = box.maximumWorld;
+        if (![lo.x, lo.y, lo.z, hi.x, hi.y, hi.z].every(Number.isFinite)) continue;
+        min = BABYLON.Vector3.Minimize(min, lo);
+        max = BABYLON.Vector3.Maximize(max, hi);
+        count++;
+      } catch (_) {}
+    }
+    return count ? { min, max } : null;
   }
 
   async function load(url) {
@@ -50,11 +74,11 @@
     const target = createScene();
     try {
       await BABYLON.SceneLoader.AppendAsync('', url, target, undefined, '.glb');
-      // GLB files can contain their own cameras/lights. Never allow those to replace the replay POV camera.
       for (const item of [...target.cameras]) {
         if (item !== camera) item.dispose();
       }
       target.activeCamera = camera;
+      sceneBounds = calculateSceneBounds(target);
       loadedUrl = url;
       ready = true;
       engine.resize();
@@ -64,11 +88,16 @@
     }
   }
 
+  // ValveResourceFormat's glTF exporter uses SourceToGltfRotation where
+  // Source +X -> glTF +Z, Source +Y -> glTF +X, Source +Z -> glTF +Y,
+  // and converts Source inches to glTF metres.
   function sourceToGltf(x, y, z) {
-    // Source 2: +X forward, +Y left, +Z up (inches).
-    // glTF: +Z forward, +X left, +Y up (metres).
     const u = 0.0254;
-    return new BABYLON.Vector3(y * u, z * u, x * u);
+    return new BABYLON.Vector3(Number(y) * u, Number(z) * u, Number(x) * u);
+  }
+
+  function sourceDirectionToGltf(x, y, z) {
+    return new BABYLON.Vector3(Number(y), Number(z), Number(x));
   }
 
   function sourceForward(pitchDeg, yawDeg) {
@@ -82,35 +111,64 @@
     };
   }
 
-  function setPlayer(player) {
-    if (!ready || !camera || !player) return;
-    const X = Number(player.X), Y = Number(player.Y), Z = Number(player.Z);
-    if (![X, Y, Z].every(Number.isFinite)) return;
+  function positionLooksUsable(position) {
+    if (!position || ![position.x, position.y, position.z].every(Number.isFinite)) return false;
+    if (!sceneBounds) return true;
+    const size = sceneBounds.max.subtract(sceneBounds.min);
+    const margin = Math.max(6, Math.max(size.x, size.y, size.z) * 0.08);
+    return position.x >= sceneBounds.min.x - margin && position.x <= sceneBounds.max.x + margin &&
+      position.y >= sceneBounds.min.y - margin && position.y <= sceneBounds.max.y + margin &&
+      position.z >= sceneBounds.min.z - margin && position.z <= sceneBounds.max.z + margin;
+  }
 
+  function usablePlayer(player) {
+    if (!player) return false;
+    const X = Number(player.X), Y = Number(player.Y), Z = Number(player.Z);
+    if (![X, Y, Z].every(Number.isFinite)) return false;
+    // Parser gaps were previously converted to 0/0/0, which parked the camera at map origin.
+    if (X === 0 && Y === 0 && Z === 0) return false;
     const duck = Math.max(0, Math.min(1, Number(player.duck_amount || 0)));
+    const eyeHeight = 64 - 18 * duck;
+    return positionLooksUsable(sourceToGltf(X, Y, Z + eyeHeight));
+  }
+
+  function setPlayer(player) {
+    if (!ready || !camera || !player) return false;
+    let state = player;
+    if (!usablePlayer(state)) {
+      if (!lastGoodPlayer || !usablePlayer(lastGoodPlayer)) return false;
+      state = lastGoodPlayer;
+    } else {
+      lastGoodPlayer = { ...state };
+    }
+
+    const X = Number(state.X), Y = Number(state.Y), Z = Number(state.Z);
+    const duck = Math.max(0, Math.min(1, Number(state.duck_amount || 0)));
     const eyeHeight = 64 - 18 * duck;
     const position = sourceToGltf(X, Y, Z + eyeHeight);
     camera.position.copyFrom(position);
 
-    const src = sourceForward(player.pitch, player.yaw);
-    const forward = new BABYLON.Vector3(src.y, src.z, src.x).normalize();
+    const src = sourceForward(state.pitch, state.yaw);
+    const forward = sourceDirectionToGltf(src.x, src.y, src.z).normalize();
     camera.setTarget(position.add(forward));
 
-    const fov = Number(player.fov || 90);
-    if (Number.isFinite(fov) && fov > 20 && fov < 170) {
-      camera.fov = BABYLON.Tools.ToRadians(fov);
-    }
+    const fov = Number(state.fov || 90);
+    if (Number.isFinite(fov) && fov > 20 && fov < 170) camera.fov = BABYLON.Tools.ToRadians(fov);
     scene.activeCamera = camera;
+    return true;
   }
 
   function isReady() { return ready; }
   function resize() { engine?.resize(); }
   function fps() { return lastFps; }
+  function isPlayerUsable(player) { return usablePlayer(player); }
   function reset() {
     loadedUrl = null;
     ready = false;
+    sceneBounds = null;
+    lastGoodPlayer = null;
     if (scene) { scene.dispose(); scene = null; }
   }
 
-  window.matchframePov = { load, setPlayer, isReady, resize, fps, reset };
+  window.matchframePov = { load, setPlayer, isReady, resize, fps, reset, isPlayerUsable };
 })();
