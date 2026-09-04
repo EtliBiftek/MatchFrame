@@ -49,6 +49,7 @@ jobs:
           node --check electron/main.cjs
           node --check electron/demo-worker.cjs
           node --check electron/preload.cjs
+          node --check electron/pov-export-v5.cjs
           node --check ui/app.js
           node --check ui/pov.js
           node --check ui/radar.js
