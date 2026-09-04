@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('matchframe', {
   capture: {
     status: () => ipcRenderer.invoke('capture:status')
   },
+  radar: {
+    load: (mapName) => ipcRenderer.invoke('radar:load', mapName)
+  },
   core: {
     status: () => ipcRenderer.invoke('core:status'),
     command: (command) => ipcRenderer.invoke('core:command', command),
