@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MatchFrame</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="titlebar">
+    <div class="brand"><span class="brand-mark">MF</span><span>MatchFrame</span><span class="alpha">0.1</span></div>
+    <div class="drag-region"></div>
+    <div class="window-controls">
+      <button id="minimize">—</button><button id="maximize">□</button><button id="close">×</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <button class="nav active"><span>◫</span> Replay</button>
+      <button class="nav"><span>⌁</span> Analysis</button>
+      <button class="nav"><span>◎</span> Aim</button>
+      <button class="nav"><span>◇</span> Utility</button>
+      <div class="sidebar-spacer"></div>
+      <div class="core-card">
+        <div class="status-row"><span id="coreDot" class="dot"></span><span id="coreLabel">Core...</span></div>
+        <div class="status-row"><span id="cs2Dot" class="dot"></span><span id="cs2Label">CS2 aranıyor</span></div>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <section class="topbar">
+        <div>
+          <div class="eyebrow">DEMO WORKSPACE</div>
+          <h1 id="matchTitle">Bir CS2 demosu aç</h1>
+          <div id="matchSubtitle" class="subtitle">POV, timeline ve analiz tek yerde.</div>
+        </div>
+        <div class="top-actions">
+          <button id="launchBtn" class="button secondary" disabled>CS2'de aç</button>
+          <button id="openBtn" class="button primary">Demo Aç</button>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <div class="stage panel">
+          <div class="panel-head"><span>Replay viewport</span><span id="mapBadge" class="badge">NO DEMO</span></div>
+          <div class="viewport" id="viewport">
+            <div class="crosshair"><i></i><i></i></div>
+            <div class="empty-state">
+              <div class="empty-icon">MF</div>
+              <strong>Demo yüklenmedi</strong>
+              <span>.dem dosyasını açınca oyuncular ve timeline burada hazırlanacak.</span>
+            </div>
+            <div id="playerOverlay" class="player-overlay hidden">
+              <div class="selected-name" id="selectedName">Player</div>
+              <div class="selected-meta" id="selectedMeta">POV selected</div>
+            </div>
+          </div>
+
+          <div class="transport">
+            <button id="backTick" class="icon-button">−64</button>
+            <button id="pauseBtn" class="play-button">▶</button>
+            <button id="forwardTick" class="icon-button">+64</button>
+            <span id="tickLabel" class="tick-label">Tick 0 / 0</span>
+            <input id="timeline" type="range" min="0" max="1" value="0" />
+            <select id="speed">
+              <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option>
+            </select>
+          </div>
+        </div>
+
+        <aside class="players panel">
+          <div class="panel-head"><span>Players</span><span id="playerCount" class="badge">0</span></div>
+          <div id="playersList" class="players-list"><div class="small-empty">Demo bekleniyor</div></div>
+        </aside>
+      </section>
+
+      <section class="events panel">
+        <div class="panel-head"><span>Round timeline</span><span id="eventCount" class="badge">0 EVENTS</span></div>
+        <div id="eventRail" class="event-rail"><span class="rail-empty">Round event'leri burada görünecek.</span></div>
+      </section>
+    </main>
+  </div>
+
+  <section id="consolePanel" class="console-panel" aria-hidden="true">
+    <div class="console-head"><span>MATCHFRAME // CS2 CONSOLE</span><span>` / ~ ile kapat</span></div>
+    <div id="consoleOutput" class="console-output"><div class="log system">MatchFrame console ready. "help" yazarak başlayabilirsin.</div></div>
+    <div class="console-input-row"><span class="prompt">&gt;</span><input id="consoleInput" autocomplete="off" spellcheck="false" placeholder="demo_gototick 12000" /><div id="suggestions" class="suggestions"></div></div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

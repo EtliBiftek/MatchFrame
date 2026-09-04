@@ -1,0 +1,76 @@
+name: Windows Build & Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: matchframe-windows-release
+  cancel-in-progress: true
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+
+      - name: Install NASM
+        shell: pwsh
+        run: choco install nasm -y --no-progress
+
+      - name: Install dependencies
+        shell: pwsh
+        run: npm install
+
+      - name: Generate Ruby analytics defaults
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force backend/generated | Out-Null
+          ruby backend/analytics/generate_defaults.rb | Out-File -Encoding utf8 backend/generated/analysis_defaults.json
+
+      - name: Build native backend
+        shell: pwsh
+        run: cargo build --manifest-path backend/Cargo.toml --release --target x86_64-pc-windows-msvc
+
+      - name: Stage backend for Electron
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force backend/target/release | Out-Null
+          Copy-Item backend/target/x86_64-pc-windows-msvc/release/matchframe-core.exe backend/target/release/matchframe-core.exe -Force
+
+      - name: Build Windows EXEs
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run dist
+
+      - name: Create GitHub Release and upload EXEs
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $tag = "v$version-build.${{ github.run_number }}"
+          $files = Get-ChildItem dist -Filter *.exe | ForEach-Object { $_.FullName }
+          if (-not $files) { throw 'No EXE files were produced.' }
+          gh release create $tag @files --target "${{ github.sha }}" --title "MatchFrame v$version build ${{ github.run_number }}" --generate-notes

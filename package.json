@@ -1,0 +1,61 @@
+{
+  "name": "matchframe",
+  "version": "0.1.0",
+  "description": "CS2 demo POV viewer, timeline workstation and match analysis desktop app",
+  "main": "electron/main.cjs",
+  "author": "EtliBiftek",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build:backend": "cargo build --manifest-path backend/Cargo.toml --release",
+    "dist": "electron-builder --win portable nsis --x64",
+    "dist:dir": "electron-builder --dir --win --x64"
+  },
+  "dependencies": {
+    "@laihoe/demoparser2": "0.42.0"
+  },
+  "devDependencies": {
+    "electron": "44.2.0",
+    "electron-builder": "26.16.0"
+  },
+  "build": {
+    "appId": "dev.matchframe.app",
+    "productName": "MatchFrame",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/@laihoe/demoparser2/**/*"
+    ],
+    "files": [
+      "electron/**/*",
+      "ui/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/target/release/matchframe-core.exe",
+        "to": "backend/matchframe-core.exe"
+      },
+      {
+        "from": "backend/analytics",
+        "to": "backend/analytics"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": ["portable", "nsis"]
+    },
+    "portable": {
+      "artifactName": "MatchFrame-${version}-Portable.${ext}"
+    },
+    "nsis": {
+      "artifactName": "MatchFrame-${version}-Setup.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
