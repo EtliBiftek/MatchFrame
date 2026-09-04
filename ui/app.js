@@ -7,9 +7,12 @@ let consoleOpen = false;
 let playing = false;
 let viewMode = 'tactical';
 let lastFrameTime = performance.now();
-let captureStream = null;
 let historyIndex = -1;
+let povMap = null;
+let povPreparing = false;
+let voiceGeneration = 0;
 const history = [];
+const voiceTracks = new Map();
 const canvas = $('replayCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -69,8 +72,21 @@ $('openBtn').onclick = async () => {
   }
 };
 
+function clearVoice() {
+  voiceGeneration++;
+  for (const track of voiceTracks.values()) {
+    track.audio.pause();
+    track.audio.src = '';
+  }
+  voiceTracks.clear();
+  $('voiceStatus').classList.add('hidden');
+}
+
 function loadDemo(result) {
-  stopCapture();
+  clearVoice();
+  window.matchframePov?.reset();
+  povMap = null;
+  povPreparing = false;
   demo = result;
   currentTick = 0;
   playing = false;
@@ -84,35 +100,62 @@ function loadDemo(result) {
   $('launchBtn').disabled = false;
   $('timeline').max = Math.max(1, result.maxTick || 1);
   $('timeline').value = 0;
-  updateTickLabel();
   $('emptyState').classList.add('hidden');
   $('viewerWarning').classList.toggle('hidden', !result.viewerError);
-  if (result.viewerError) {
-    $('viewerWarning').textContent = `Reconstructed viewer bu demoda tam parse edilemedi: ${result.viewerError}`;
-  }
+  if (result.viewerError) $('viewerWarning').textContent = `Replay bu demoda tam parse edilemedi: ${result.viewerError}`;
+  renderRoundSelector();
   renderPlayers(result.players || []);
-  renderEvents(result);
   selectDefaultPlayer(result.players || []);
+  updateTimeLabel();
   setViewMode('tactical');
   drawCurrentFrame();
   const frameCount = result.frames?.length || 0;
   $('viewerLabel').textContent = frameCount ? `${frameCount.toLocaleString('tr-TR')} replay frame` : 'Event-only demo';
-  log(`Loaded ${map}: ${(result.players || []).length} players, ${frameCount} replay frames, max tick ${result.maxTick || 0}`, 'ok');
+  log(`Loaded ${map}: ${(result.players || []).length} players, ${frameCount} replay frames, ${formatClock(result.durationSeconds || 0)}`, 'ok');
+  prepareVoice(result.file);
+}
+
+function playerInitial(name, index = 0) {
+  const text = String(name || '').trim();
+  return (text[0] || String(index + 1)).toUpperCase();
 }
 
 function renderPlayers(players) {
+  const selectedSteam = String(selectedPlayer?.steamid || '');
   $('playerCount').textContent = players.length;
   $('playersList').innerHTML = '';
+  selectedPlayerButton = null;
   players.forEach((player, index) => {
-    const button = document.createElement('button');
-    const team = Number(player.team_number) === 2 ? 'T' : Number(player.team_number) === 3 ? 'CT' : '?';
-    button.className = 'player';
-    button.innerHTML = `<span class="avatar ${team.toLowerCase()}">${team}</span><span class="ptext"><span class="pname"></span><span class="pmeta"></span></span>`;
-    button.querySelector('.pname').textContent = player.name || `Player ${index + 1}`;
-    button.querySelector('.pmeta').textContent = player.steamid || 'Unknown SteamID';
-    button.onclick = () => selectPlayer(player, button, true);
-    $('playersList').appendChild(button);
+    const row = document.createElement('button');
+    row.className = 'player';
+    row.innerHTML = `<span class="avatar neutral"></span><span class="ptext"><span class="pname"></span><span class="pmeta"></span></span><span class="voice-slot"></span>`;
+    row.querySelector('.avatar').textContent = playerInitial(player.name, index);
+    row.querySelector('.pname').textContent = player.name || `Player ${index + 1}`;
+    row.querySelector('.pmeta').textContent = player.steamid || 'Unknown SteamID';
+    const steamid = String(player.steamid || '');
+    const voice = voiceTracks.get(steamid);
+    if (voice) {
+      const voiceButton = document.createElement('button');
+      voiceButton.className = `voice-toggle${voice.enabled ? ' active' : ''}`;
+      voiceButton.type = 'button';
+      voiceButton.title = voice.enabled ? 'Oyun içi sesi kapat' : 'Oyun içi sesi aç';
+      voiceButton.textContent = voice.enabled ? 'Ses açık' : 'Ses';
+      voiceButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        voice.enabled = !voice.enabled;
+        voiceButton.classList.toggle('active', voice.enabled);
+        voiceButton.textContent = voice.enabled ? 'Ses açık' : 'Ses';
+        voiceButton.title = voice.enabled ? 'Oyun içi sesi kapat' : 'Oyun içi sesi aç';
+        syncVoice(true);
+      };
+      row.querySelector('.voice-slot').appendChild(voiceButton);
+    }
+    row.onclick = () => selectPlayer(player, row);
+    $('playersList').appendChild(row);
+    if (selectedSteam && steamid === selectedSteam) selectedPlayerButton = row;
   });
+  if (selectedPlayerButton) selectedPlayerButton.classList.add('active');
 }
 
 function selectDefaultPlayer(players) {
@@ -120,10 +163,10 @@ function selectDefaultPlayer(players) {
   const preferred = players.find((p) => /pifo/i.test(String(p.name || ''))) || players[0];
   const buttons = [...document.querySelectorAll('.player')];
   const index = players.indexOf(preferred);
-  selectPlayer(preferred, buttons[index] || buttons[0], false);
+  selectPlayer(preferred, buttons[index] || buttons[0]);
 }
 
-function selectPlayer(player, button, syncPov) {
+function selectPlayer(player, button) {
   selectedPlayer = player;
   if (selectedPlayerButton) selectedPlayerButton.classList.remove('active');
   selectedPlayerButton = button || null;
@@ -131,161 +174,248 @@ function selectPlayer(player, button, syncPov) {
   $('povHud').classList.remove('hidden');
   $('selectedName').textContent = player.name || 'Player';
   $('selectedTeam').textContent = Number(player.team_number) === 2 ? 'T' : Number(player.team_number) === 3 ? 'CT' : '—';
+  renderTimelineMarkers();
   updateSelectedHud();
-  drawCurrentFrame();
-  if (syncPov && viewMode === 'pov') syncSelectedPlayerToCs2();
+  if (viewMode === 'pov') updatePovCamera();
+  else drawCurrentFrame();
 }
 
-async function syncSelectedPlayerToCs2() {
-  if (!selectedPlayer) return;
-  await sendCommand('spec_mode 1', false);
-  const safeName = String(selectedPlayer.name || '').replace(/["\\]/g, '');
-  if (safeName) await sendCommand(`spec_player "${safeName}"`, false);
-}
-
-function renderEvents(result) {
-  const rounds = result.rounds || [];
-  const deaths = result.deaths || [];
-  const plants = result.plants || [];
-  const defuses = result.defuses || [];
-  const explosions = result.explosions || [];
-  const items = [
-    ...rounds.map((x) => ({ tick: Number(x.tick || 0), kind: 'Round end', text: x.winner ? `Winner ${x.winner}` : 'Round completed' })),
-    ...deaths.map((x) => ({ tick: Number(x.tick || 0), kind: 'Kill', text: `${x.attacker_name || x.attacker || '?'} → ${x.user_name || x.user || '?'}` })),
-    ...plants.map((x) => ({ tick: Number(x.tick || 0), kind: 'Bomb planted', text: x.user_name || 'Plant' })),
-    ...defuses.map((x) => ({ tick: Number(x.tick || 0), kind: 'Bomb defused', text: x.user_name || 'Defuse' })),
-    ...explosions.map((x) => ({ tick: Number(x.tick || 0), kind: 'Bomb exploded', text: 'Explosion' }))
-  ].filter((x) => x.tick).sort((a, b) => a.tick - b.tick);
-  $('eventCount').textContent = `${items.length} EVENTS`;
-  $('eventRail').innerHTML = '';
-  if (!items.length) {
-    $('eventRail').innerHTML = '<span class="rail-empty">Event bulunamadı.</span>';
-    return;
+function playerMatchesEvent(event, role) {
+  if (!selectedPlayer) return false;
+  const steam = String(selectedPlayer.steamid || '');
+  const name = String(selectedPlayer.name || '');
+  const steamKeys = [`${role}_steamid`, `${role}_xuid`, `${role}_player_steamid`];
+  for (const key of steamKeys) {
+    if (steam && event[key] != null && String(event[key]) === steam) return true;
   }
-  items.slice(0, 420).forEach((event) => {
-    const chip = document.createElement('button');
-    chip.className = 'event-chip';
-    chip.innerHTML = '<b></b><span></span>';
-    chip.querySelector('b').textContent = event.kind;
-    chip.querySelector('span').textContent = `Tick ${event.tick}`;
-    chip.title = event.text;
-    chip.onclick = () => seek(event.tick, viewMode === 'pov');
-    $('eventRail').appendChild(chip);
-  });
+  const nameKeys = [`${role}_name`, `${role}_player_name`];
+  for (const key of nameKeys) {
+    if (name && event[key] != null && String(event[key]) === name) return true;
+  }
+  return false;
 }
+
+function opponentName(event, role) {
+  return String(event[`${role}_name`] || event[`${role}_player_name`] || event[role] || '?');
+}
+
+function renderTimelineMarkers() {
+  const layer = $('timelineMarkers');
+  layer.innerHTML = '';
+  if (!demo || !selectedPlayer || !demo.maxTick) return;
+  const events = [];
+  for (const event of demo.deaths || []) {
+    const tick = Number(event.tick || 0);
+    if (!tick) continue;
+    if (playerMatchesEvent(event, 'attacker') && !playerMatchesEvent(event, 'user')) {
+      events.push({ tick, kind: 'kill', text: `Kill · ${opponentName(event, 'user')}` });
+    }
+    if (playerMatchesEvent(event, 'user')) {
+      events.push({ tick, kind: 'death', text: `Ölüm · ${opponentName(event, 'attacker')}` });
+    }
+  }
+  for (const event of events) {
+    const marker = document.createElement('button');
+    marker.type = 'button';
+    marker.className = `timeline-marker ${event.kind}`;
+    marker.style.left = `${Math.max(0, Math.min(100, event.tick / demo.maxTick * 100))}%`;
+    marker.title = `${event.text} · ${formatTick(event.tick)}`;
+    marker.setAttribute('aria-label', marker.title);
+    marker.onclick = (e) => { e.preventDefault(); seek(event.tick); };
+    layer.appendChild(marker);
+  }
+}
+
+function renderRoundSelector() {
+  const select = $('roundSelect');
+  select.innerHTML = '<option value="">Tur —</option>';
+  for (const round of demo?.roundMeta || []) {
+    const option = document.createElement('option');
+    option.value = String(round.startTick);
+    option.textContent = `Tur ${round.number}`;
+    select.appendChild(option);
+  }
+}
+
+function currentRoundIndex() {
+  const rounds = demo?.roundMeta || [];
+  if (!rounds.length) return -1;
+  let result = 0;
+  for (let i = 0; i < rounds.length; i++) {
+    if (currentTick >= rounds[i].startTick) result = i;
+    else break;
+  }
+  return result;
+}
+
+function updateRoundSelect() {
+  const index = currentRoundIndex();
+  const round = demo?.roundMeta?.[index];
+  if (round) $('roundSelect').value = String(round.startTick);
+}
+
+function jumpRound(direction) {
+  const rounds = demo?.roundMeta || [];
+  if (!rounds.length) return;
+  const current = currentRoundIndex();
+  const target = Math.max(0, Math.min(rounds.length - 1, current + direction));
+  seek(rounds[target].startTick);
+}
+
+$('prevRound').onclick = () => jumpRound(-1);
+$('nextRound').onclick = () => jumpRound(1);
+$('roundSelect').onchange = (event) => {
+  if (event.target.value !== '') seek(Number(event.target.value));
+};
 
 $('launchBtn').onclick = async () => {
   if (!demo) return;
   try {
     await window.matchframe.demo.launch(demo.file);
-    log(`CS2 launch requested: playdemo ${demo.file}`, 'ok');
-    $('viewerLabel').textContent = 'CS2 açılıyor';
+    log(`CS2 launch requested for ${demo.file.split(/[\\/]/).pop()}`, 'ok');
     setTimeout(refreshCore, 5000);
-  } catch (error) {
-    log(error.message, 'error');
-    openConsole(true);
-  }
+  } catch (error) { log(error.message, 'error'); openConsole(true); }
 };
 
-function updateTickLabel() {
+function tickRate() { return Number(demo?.tickRate || 64) || 64; }
+function formatClock(seconds) {
+  const value = Math.max(0, Number(seconds || 0));
+  const whole = Math.floor(value);
+  const minutes = Math.floor(whole / 60);
+  const secs = whole % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+function formatTick(tick) { return formatClock(Number(tick || 0) / tickRate()); }
+
+function updateTimeLabel() {
+  if (!demo) { $('timeLabel').textContent = '00:00 / 00:00'; return; }
   $('timeline').value = currentTick;
-  $('tickLabel').textContent = `Tick ${Math.round(currentTick)} / ${demo?.maxTick || 0}`;
+  $('timeLabel').textContent = `${formatTick(currentTick)} / ${formatTick(demo.maxTick || 0)}`;
+  updateRoundSelect();
 }
 
-async function seek(tick, syncCs2 = false) {
+async function seek(tick) {
   if (!demo) return;
   currentTick = Math.max(0, Math.min(Number(demo.maxTick || 0), Number(tick || 0)));
-  updateTickLabel();
-  drawCurrentFrame();
-  if (syncCs2) await sendCommand(`demo_gototick ${Math.round(currentTick)}`, false);
+  updateTimeLabel();
+  if (viewMode === 'pov') updatePovCamera();
+  else drawCurrentFrame();
+  syncVoice(true);
 }
 
-$('timeline').oninput = (event) => seek(event.target.value, false);
-$('timeline').onchange = (event) => seek(event.target.value, viewMode === 'pov');
-$('backTick').onclick = () => seek(currentTick - 64, viewMode === 'pov');
-$('forwardTick').onclick = () => seek(currentTick + 64, viewMode === 'pov');
-$('pauseBtn').onclick = async () => {
+$('timeline').oninput = (event) => seek(event.target.value);
+$('pauseBtn').onclick = () => {
   if (!demo) return;
   playing = !playing;
   $('pauseBtn').textContent = playing ? 'Ⅱ' : '▶';
   lastFrameTime = performance.now();
-  if (viewMode === 'pov') await sendCommand('demo_togglepause', false);
+  syncVoice(true);
 };
-$('speed').onchange = async (event) => {
-  if (viewMode === 'pov') await sendCommand(`demo_timescale ${event.target.value}`, false);
-};
+$('speed').onchange = () => syncVoice(true);
 
 $('tacticalTab').onclick = () => setViewMode('tactical');
-$('povTab').onclick = () => activateRealPov();
+$('povTab').onclick = () => activateOfflinePov();
 
 function setViewMode(mode) {
   viewMode = mode;
   $('tacticalTab').classList.toggle('active', mode === 'tactical');
   $('povTab').classList.toggle('active', mode === 'pov');
   canvas.classList.toggle('hidden', mode !== 'tactical');
-  $('povVideo').classList.toggle('hidden', mode !== 'pov' || !captureStream);
-  $('captureState').classList.toggle('hidden', mode !== 'pov' || Boolean(captureStream));
-  if (mode === 'tactical') {
-    $('viewerLabel').textContent = `${demo?.frames?.length || 0} replay frame`;
-    drawCurrentFrame();
-  }
+  $('povCanvas').classList.toggle('hidden', mode !== 'pov' || !window.matchframePov?.isReady());
+  $('povState').classList.toggle('hidden', mode !== 'pov' || window.matchframePov?.isReady());
+  const grid = document.querySelector('.viewport-grid');
+  if (grid) grid.classList.toggle('hidden', mode === 'pov');
+  if (mode === 'tactical') drawCurrentFrame();
+  else { window.matchframePov?.resize(); updatePovCamera(); }
 }
 
-async function activateRealPov() {
-  if (!demo) return;
+async function activateOfflinePov() {
+  if (!demo || povPreparing) return;
   setViewMode('pov');
-  $('captureTitle').textContent = 'CS2 görüntüsü hazırlanıyor';
-  $('captureText').textContent = 'Gerçek POV için çalışan CS2 penceresi aranıyor.';
+  const map = String(demo.header?.map_name || '').toLowerCase();
+  if (window.matchframePov?.isReady() && povMap === map) {
+    $('povCanvas').classList.remove('hidden');
+    $('povState').classList.add('hidden');
+    updatePovCamera();
+    return;
+  }
+  povPreparing = true;
+  $('povCanvas').classList.add('hidden');
+  $('povState').classList.remove('hidden');
+  $('povStateTitle').textContent = 'Offline POV hazırlanıyor';
+  $('povStateText').textContent = 'İlk açılışta Source 2 Viewer indirilir ve yerel CS2 map dosyası GLB cache’e dönüştürülür. CS2.exe açılmaz.';
+  $('viewerLabel').textContent = `${map} 3D map hazırlanıyor`;
   try {
-    const status = await window.matchframe.capture.status();
-    if (!status.available) {
-      await window.matchframe.demo.launch(demo.file);
-      $('captureTitle').textContent = 'CS2 açılıyor';
-      $('captureText').textContent = 'Oyun ve demo açıldıktan sonra Gerçek POV düğmesine tekrar tıkla.';
-      $('viewerLabel').textContent = 'CS2 bekleniyor';
-      setTimeout(refreshCore, 4500);
+    const prepared = await window.matchframe.pov.prepare(map);
+    await window.matchframePov.load(prepared.url);
+    povMap = map;
+    if (viewMode === 'pov') {
+      $('povCanvas').classList.remove('hidden');
+      $('povState').classList.add('hidden');
+    }
+    $('viewerLabel').textContent = `Offline POV · ${prepared.renderer}`;
+    updatePovCamera();
+  } catch (error) {
+    $('povStateTitle').textContent = 'Offline POV hazırlanamadı';
+    $('povStateText').textContent = error.message;
+    $('viewerLabel').textContent = 'Offline POV hatası';
+    log(`Offline POV: ${error.message}`, 'error');
+  } finally { povPreparing = false; }
+}
+
+function updatePovCamera() {
+  if (viewMode !== 'pov' || !window.matchframePov?.isReady()) return;
+  const frame = nearestFrame(currentTick);
+  const player = playerInFrame(frame, selectedPlayer);
+  if (player) window.matchframePov.setPlayer(player);
+  updateSelectedHud(frame);
+}
+
+async function prepareVoice(file) {
+  const generation = voiceGeneration;
+  try {
+    const result = await window.matchframe.voice.prepare(file);
+    if (generation !== voiceGeneration || !demo || demo.file !== file) return;
+    if (!result?.available || !result.tracks?.length) {
+      $('voiceStatus').classList.add('hidden');
       return;
     }
-    stopCapture();
-    captureStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: 60, width: { ideal: 1920 }, height: { ideal: 1080 } },
-      audio: false
-    });
-    const video = $('povVideo');
-    video.srcObject = captureStream;
-    video.classList.remove('hidden');
-    $('captureState').classList.add('hidden');
-    await video.play();
-    for (const track of captureStream.getVideoTracks()) {
-      track.addEventListener('ended', () => {
-        captureStream = null;
-        if (viewMode === 'pov') {
-          video.classList.add('hidden');
-          $('captureState').classList.remove('hidden');
-          $('captureTitle').textContent = 'POV bağlantısı kesildi';
-          $('captureText').textContent = 'Gerçek POV düğmesine basarak tekrar bağlanabilirsin.';
-        }
-      });
+    for (const item of result.tracks) {
+      const audio = new Audio(item.url);
+      audio.preload = 'metadata';
+      audio.volume = 1;
+      voiceTracks.set(String(item.steamid), { audio, enabled: false });
     }
-    $('viewerLabel').textContent = `CS2 capture · ${status.name || 'window'}`;
-    await sendCommand(`demo_gototick ${Math.round(currentTick)}`, false);
-    await syncSelectedPlayerToCs2();
+    $('voiceStatus').textContent = `${voiceTracks.size} oyuncunun oyun içi sesi mevcut`;
+    $('voiceStatus').classList.remove('hidden');
+    const selectedSteam = String(selectedPlayer?.steamid || '');
+    renderPlayers(demo.players || []);
+    if (selectedSteam) {
+      const player = (demo.players || []).find((p) => String(p.steamid || '') === selectedSteam);
+      const row = [...document.querySelectorAll('.player')].find((el) => el.querySelector('.pmeta')?.textContent === selectedSteam);
+      if (player) selectPlayer(player, row || null);
+    }
+    log(`Demo voice ready: ${voiceTracks.size} player tracks`, 'ok');
   } catch (error) {
-    log(`POV capture: ${error.message}`, 'error');
-    $('captureTitle').textContent = 'POV bağlanamadı';
-    $('captureText').textContent = error.message;
-    $('viewerLabel').textContent = 'POV capture hatası';
+    if (generation !== voiceGeneration) return;
+    $('voiceStatus').classList.add('hidden');
+    log(`Voice extraction unavailable: ${error.message}`, 'system');
   }
 }
 
-function stopCapture() {
-  if (captureStream) {
-    captureStream.getTracks().forEach((track) => track.stop());
-    captureStream = null;
+function syncVoice(force = false) {
+  if (!demo) return;
+  const second = currentTick / tickRate();
+  const speed = Number($('speed').value || 1);
+  for (const track of voiceTracks.values()) {
+    const audio = track.audio;
+    audio.playbackRate = speed;
+    if (!track.enabled) { audio.pause(); continue; }
+    if (force || !Number.isFinite(audio.currentTime) || Math.abs(audio.currentTime - second) > 0.3) {
+      try { audio.currentTime = Math.min(second, Number.isFinite(audio.duration) ? Math.max(0, audio.duration - 0.02) : second); } catch (_) {}
+    }
+    if (playing) audio.play().catch(() => {}); else audio.pause();
   }
-  const video = $('povVideo');
-  video.srcObject = null;
-  video.classList.add('hidden');
 }
 
 function nearestFrame(tick) {
@@ -301,14 +431,19 @@ function nearestFrame(tick) {
   return Math.abs(a.tick - tick) <= Math.abs(b.tick - tick) ? a : b;
 }
 
+function playerInFrame(frame, player) {
+  if (!frame || !player) return null;
+  const steam = String(player.steamid || '');
+  const name = String(player.name || '');
+  return frame.players.find((p) => (steam && String(p.steamid) === steam) || (!steam && p.name === name)) || null;
+}
+
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.max(1, Math.floor(rect.width * dpr));
   const h = Math.max(1, Math.floor(rect.height * dpr));
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w; canvas.height = h;
-  }
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   return { width: rect.width, height: rect.height };
 }
@@ -332,16 +467,11 @@ function drawCurrentFrame() {
   const ox = (width - mapW) / 2;
   const oy = (height - mapH) / 2;
   const toScreen = (x, y) => [ox + (x - bounds.minX) * scale, oy + (bounds.maxY - y) * scale];
-
-  const selectedSteam = String(selectedPlayer?.steamid || '');
-  const selectedName = String(selectedPlayer?.name || '');
-  const selected = frame.players.find((p) => (selectedSteam && String(p.steamid) === selectedSteam) || (!selectedSteam && p.name === selectedName));
-
+  const selected = playerInFrame(frame, selectedPlayer);
   if (selected && Number.isFinite(selected.X) && Number.isFinite(selected.Y)) {
     const [px, py] = toScreen(selected.X, selected.Y);
     drawVision(px, py, Number(selected.yaw || 0), Math.min(width, height) * .22);
   }
-
   for (const player of frame.players) {
     if (!Number.isFinite(player.X) || !Number.isFinite(player.Y)) continue;
     const [x, y] = toScreen(player.X, player.Y);
@@ -350,9 +480,7 @@ function drawCurrentFrame() {
     const color = Number(player.team_num) === 2 ? '#c4a574' : Number(player.team_num) === 3 ? '#7a9bb8' : '#8e8e96';
     ctx.save();
     ctx.globalAlpha = alive ? 1 : .28;
-    if (isSelected) {
-      ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.strokeStyle = '#f0f0f2'; ctx.lineWidth = 1.5; ctx.stroke();
-    }
+    if (isSelected) { ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.strokeStyle = '#f0f0f2'; ctx.lineWidth = 1.5; ctx.stroke(); }
     ctx.beginPath(); ctx.arc(x, y, isSelected ? 6 : 5, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
     const rad = (Number(player.yaw || 0) - 90) * Math.PI / 180;
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(rad) * 13, y + Math.sin(rad) * 13); ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.stroke();
@@ -363,17 +491,14 @@ function drawCurrentFrame() {
     ctx.restore();
   }
   updateSelectedHud(frame);
-  drawCoordinateLabel(width, height, frame.tick);
+  ctx.font = '9px Consolas, monospace'; ctx.fillStyle = '#5f5f66';
+  ctx.fillText(`RECONSTRUCTED · ${formatTick(frame.tick)}`, 12, height - 12);
 }
 
 function drawBackdrop(width, height) {
-  ctx.strokeStyle = 'rgba(255,255,255,.025)';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(255,255,255,.025)'; ctx.lineWidth = 1;
   for (let x = 24; x < width; x += 32) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
   for (let y = 24; y < height; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
-  const grad = ctx.createRadialGradient(width * .5, height * .48, 10, width * .5, height * .48, Math.max(width, height) * .55);
-  grad.addColorStop(0, 'rgba(158,176,194,.035)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = grad; ctx.fillRect(0, 0, width, height);
 }
 
 function drawVision(x, y, yaw, length) {
@@ -384,15 +509,9 @@ function drawVision(x, y, yaw, length) {
   ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, length, a - spread, a + spread); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
 }
 
-function drawCoordinateLabel(width, height, tick) {
-  ctx.font = '9px Consolas, monospace'; ctx.fillStyle = '#5f5f66';
-  ctx.fillText(`RECONSTRUCTED · TICK ${tick}`, 12, height - 12);
-}
-
 function updateSelectedHud(frame = nearestFrame(currentTick)) {
   if (!selectedPlayer || !frame) return;
-  const steam = String(selectedPlayer.steamid || '');
-  const p = frame.players.find((x) => (steam && String(x.steamid) === steam) || x.name === selectedPlayer.name);
+  const p = playerInFrame(frame, selectedPlayer);
   if (!p) return;
   $('selectedHealth').textContent = `${Math.max(0, Math.round(p.health || 0))} HP`;
   $('selectedYaw').textContent = `${Math.round(p.yaw || 0)}°`;
@@ -402,22 +521,23 @@ function updateSelectedHud(frame = nearestFrame(currentTick)) {
 function playbackLoop(now) {
   const dt = Math.min(.1, (now - lastFrameTime) / 1000);
   lastFrameTime = now;
-  if (playing && demo && viewMode === 'tactical') {
+  if (playing && demo) {
     const speed = Number($('speed').value || 1);
-    currentTick += dt * 64 * speed;
+    currentTick += dt * tickRate() * speed;
     if (currentTick >= Number(demo.maxTick || 0)) {
       currentTick = Number(demo.maxTick || 0);
       playing = false;
       $('pauseBtn').textContent = '▶';
+      syncVoice(true);
     }
-    updateTickLabel();
-    drawCurrentFrame();
+    updateTimeLabel();
+    if (viewMode === 'pov') updatePovCamera(); else drawCurrentFrame();
+    if (Math.floor(now / 1000) !== Math.floor((now - dt * 1000) / 1000)) syncVoice(false);
   }
   requestAnimationFrame(playbackLoop);
 }
 requestAnimationFrame(playbackLoop);
-
-new ResizeObserver(() => drawCurrentFrame()).observe($('viewport'));
+new ResizeObserver(() => { if (viewMode === 'pov') window.matchframePov?.resize(); else drawCurrentFrame(); }).observe($('viewport'));
 
 function openConsole(force) {
   consoleOpen = force ?? !consoleOpen;
@@ -427,10 +547,9 @@ function openConsole(force) {
 }
 
 document.addEventListener('keydown', (event) => {
-  if (event.code === 'Backquote' && !event.ctrlKey && !event.altKey) {
-    event.preventDefault();
-    openConsole();
-  }
+  if (event.code === 'Backquote' && !event.ctrlKey && !event.altKey) { event.preventDefault(); openConsole(); }
+  if (!consoleOpen && event.key === 'ArrowLeft' && event.shiftKey) jumpRound(-1);
+  if (!consoleOpen && event.key === 'ArrowRight' && event.shiftKey) jumpRound(1);
 });
 
 async function sendCommand(raw, echo = true) {
@@ -444,9 +563,7 @@ async function sendCommand(raw, echo = true) {
     const response = await window.matchframe.core.command(command);
     if (response.ok) log(response.message || `Sent: ${command}`, 'ok');
     else log(response.error || 'Command failed', 'error');
-  } catch (error) {
-    log(error.message, 'error');
-  }
+  } catch (error) { log(error.message, 'error'); }
 }
 
 const input = $('consoleInput');
@@ -458,15 +575,10 @@ input.addEventListener('keydown', async (event) => {
     input.value = ''; $('suggestions').classList.remove('show');
     await sendCommand(value);
   } else if (event.key === 'ArrowUp') {
-    event.preventDefault();
-    if (history.length) input.value = history[Math.min(++historyIndex, history.length - 1)];
+    event.preventDefault(); if (history.length) input.value = history[Math.min(++historyIndex, history.length - 1)];
   } else if (event.key === 'ArrowDown') {
-    event.preventDefault();
-    historyIndex = Math.max(-1, historyIndex - 1);
-    input.value = historyIndex < 0 ? '' : history[historyIndex];
-  } else if (event.key === 'Escape') {
-    openConsole(false);
-  }
+    event.preventDefault(); historyIndex = Math.max(-1, historyIndex - 1); input.value = historyIndex < 0 ? '' : history[historyIndex];
+  } else if (event.key === 'Escape') openConsole(false);
 });
 
 function renderSuggestions() {
@@ -474,15 +586,8 @@ function renderSuggestions() {
   const results = value ? CS2_COMMANDS.filter((x) => x.startsWith(value)).slice(0, 8) : [];
   $('suggestions').innerHTML = '';
   results.forEach((command) => {
-    const item = document.createElement('div');
-    item.className = 'suggestion';
-    item.textContent = command;
-    item.onmousedown = (event) => {
-      event.preventDefault();
-      input.value = `${command} `;
-      $('suggestions').classList.remove('show');
-      input.focus();
-    };
+    const item = document.createElement('div'); item.className = 'suggestion'; item.textContent = command;
+    item.onmousedown = (event) => { event.preventDefault(); input.value = `${command} `; $('suggestions').classList.remove('show'); input.focus(); };
     $('suggestions').appendChild(item);
   });
   $('suggestions').classList.toggle('show', results.length > 0);
