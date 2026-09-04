@@ -19,8 +19,24 @@
     #povCanvas.hidden{display:block!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
     #povCanvas{contain:strict;transform:translateZ(0);will-change:contents}
     #viewport{isolation:isolate}
+    #babylonjsLoadingDiv{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
   `;
   document.head.appendChild(style);
+
+  function suppressBabylonLoadingUi() {
+    try {
+      if (BABYLON.SceneLoaderFlags) BABYLON.SceneLoaderFlags.ShowLoadingScreen = false;
+    } catch (_) {}
+    try {
+      if (engine) {
+        // SceneLoader's built-in overlay is the orange Babylon logo/spinner from the screenshot.
+        // MatchFrame already has its own POV preparation state, so never let Babylon cover the app.
+        engine.displayLoadingUI = () => {};
+        engine.hideLoadingUI?.();
+      }
+    } catch (_) {}
+    try { document.getElementById('babylonjsLoadingDiv')?.remove(); } catch (_) {}
+  }
 
   function ensureCanvas() {
     if (!canvas) canvas = document.getElementById('povCanvas');
@@ -85,6 +101,7 @@
       });
       engine.setHardwareScalingLevel(1);
       engine.enableOfflineSupport = false;
+      suppressBabylonLoadingUi();
       syncRenderSize(true);
 
       engine.runRenderLoop(() => {
@@ -180,7 +197,7 @@
       try {
         if (!mesh?.getTotalVertices?.() || mesh.getTotalVertices() <= 0) continue;
         // Source vertex tint/alpha is unreliable in VRF map exports and previously produced
-        // the giant red/orange polygons. The v4 cache removes COLOR_0 too; this is defensive.
+        // the giant red/orange polygons. The safe cache removes COLOR_0 too; this is defensive.
         mesh.useVertexColors = false;
         mesh.hasVertexAlpha = false;
       } catch (_) {}
@@ -190,8 +207,7 @@
       try {
         material.alpha = 1;
         if (BABYLON.PBRMaterial && material instanceof BABYLON.PBRMaterial) {
-          // v4 keeps lightweight base colours from the Source material names but never uploads
-          // the embedded map textures. Full VRF textures repeatedly killed Chromium's GPU process.
+          // Safe caches keep lightweight base colours but never upload embedded map textures.
           detachTexture(material, 'albedoTexture');
           detachTexture(material, 'metallicTexture');
           detachTexture(material, 'bumpTexture');
@@ -228,8 +244,10 @@
   async function load(url) {
     if (ready && loadedUrl === url) return;
     const target = createScene();
+    suppressBabylonLoadingUi();
     try {
       await BABYLON.SceneLoader.AppendAsync('', url, target, undefined, '.glb');
+      suppressBabylonLoadingUi();
       for (const item of [...target.cameras]) {
         if (item !== camera) item.dispose();
       }
@@ -246,6 +264,8 @@
     } catch (error) {
       ready = false;
       throw new Error(`Offline map yüklenemedi: ${error?.message || error}`);
+    } finally {
+      suppressBabylonLoadingUi();
     }
   }
 
@@ -350,6 +370,7 @@
     loadedUrl = null;
     contextLost = false;
     disposeEngineOnly();
+    suppressBabylonLoadingUi();
   }
 
   window.matchframePov = {
