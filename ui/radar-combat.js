@@ -1,6 +1,7 @@
 (() => {
   let damageBySteam = new Map();
   let fireBySteam = new Map();
+  let blindBySteam = new Map();
   let utilityOwners = { smokes: [], infernos: [], hes: [], flashes: [] };
 
   const PLAYER_COLORS = {
@@ -24,6 +25,10 @@
 
   function eventName(event) {
     return String(event?.user_name ?? event?.player_name ?? event?.thrower_name ?? event?.name ?? '').trim();
+  }
+
+  function eventSteam(event) {
+    return String(event?.user_steamid ?? event?.player_steamid ?? event?.steamid ?? '');
   }
 
   function eventPosition(event) {
@@ -62,6 +67,7 @@
   function buildCombatIndex(result) {
     damageBySteam = new Map();
     fireBySteam = new Map();
+    blindBySteam = new Map();
     const frames = result?.frames || [];
     const previous = new Map();
     for (const frame of frames) {
@@ -98,6 +104,15 @@
       hes: (utility.heDetonates || []).map((event) => ({ tick: eventTick(event), endTick: eventTick(event) + 64 * .8, name: eventName(event), position: eventPosition(event) })).filter((x) => x.position),
       flashes: (utility.flashDetonates || []).map((event) => ({ tick: eventTick(event), endTick: eventTick(event) + 64 * 1.1, name: eventName(event), position: eventPosition(event) })).filter((x) => x.position)
     };
+
+    const rate = Number(result?.tickRate || 64) || 64;
+    for (const event of utility.playerBlinds || []) {
+      const steamid = eventSteam(event);
+      if (!steamid) continue;
+      const tick = eventTick(event);
+      const duration = Math.max(.1, Number(event?.blind_duration ?? event?.user_blind_duration ?? 1) || 1);
+      pushEvent(blindBySteam, steamid, { tick, endTick: tick + duration * rate, duration });
+    }
   }
 
   function latestEvent(events, tick) {
@@ -198,6 +213,48 @@
     }
   }
 
+  function drawBlindEffects(frame) {
+    if (viewMode !== 'tactical' || !frame || !window.matchframeRadarFast) return;
+    for (const player of frame.players || []) {
+      const point = playerPoint(player);
+      if (!point) continue;
+      const blind = latestEvent(blindBySteam.get(String(player.steamid || '')), currentTick);
+      const frameBlind = Number(player?.flash_duration || 0) > 0;
+      const activeEvent = blind && currentTick <= blind.endTick;
+      if (!activeEvent && !frameBlind) continue;
+      const [x, y] = point;
+      const leftSeconds = activeEvent ? Math.max(0, (blind.endTick - currentTick) / tickRate()) : null;
+      const pulse = .5 + .5 * Math.sin(performance.now() / 70);
+      ctx.save();
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = 'rgba(255,255,240,.9)';
+      ctx.strokeStyle = 'rgba(255,255,242,.96)';
+      ctx.fillStyle = 'rgba(255,255,245,.16)';
+      ctx.lineWidth = 1.7;
+      ctx.beginPath();
+      ctx.arc(x, y, 13 + pulse * 1.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x - 7, y + 7);
+      ctx.lineTo(x + 7, y - 7);
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.font = 'bold 7px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,255,242,.98)';
+      ctx.strokeStyle = 'rgba(0,0,0,.9)';
+      ctx.lineWidth = 3;
+      const label = leftSeconds == null ? 'KÖR' : `KÖR ${leftSeconds.toFixed(leftSeconds < 1 ? 1 : 0)}s`;
+      ctx.strokeText(label, x, y + 23);
+      ctx.fillText(label, x, y + 23);
+      ctx.restore();
+    }
+  }
+
   function drawOwnerTag(item) {
     if (!item?.name || currentTick < item.tick || currentTick > item.endTick) return;
     const point = window.matchframeRadarFast?.worldToScreen?.(item.position.X, item.position.Y);
@@ -238,6 +295,7 @@
     drawPlayerColors(frame);
     drawDamageEffects(frame);
     drawFireEffects(frame);
+    drawBlindEffects(frame);
     drawUtilityOwners();
   };
 })();
