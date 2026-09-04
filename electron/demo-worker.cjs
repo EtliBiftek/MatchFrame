@@ -50,8 +50,12 @@ function buildFrames(rows) {
       team_num: finite(row.team_num) ?? 0,
       team_name: String(row.team_name ?? ''),
       team_clan_name: String(row.team_clan_name ?? ''),
+      player_color: String(row.player_color ?? ''),
       active_weapon_name: String(row.active_weapon_name ?? ''),
       active_weapon_ammo: finite(row.active_weapon_ammo),
+      total_ammo_left: finite(row.total_ammo_left),
+      flash_duration: finite(row.flash_duration) ?? 0,
+      inventory: row.inventory ?? [],
       has_c4: inventoryHasC4(row.inventory)
     });
   }
@@ -235,11 +239,12 @@ parentPort.on('message', ({ file }) => {
     const roundEnds = safeEvent(file, 'round_end', [], ['total_rounds_played', 'is_warmup_period']);
     const deaths = safeEvent(file, 'player_death', ['player_steamid', 'player_name'], ['total_rounds_played']);
     reportProgress(18, 'C4 eventleri ayrıştırılıyor…');
-    const plants = safeEvent(file, 'bomb_planted', ['X', 'Y', 'Z'], ['total_rounds_played']);
-    const defuses = safeEvent(file, 'bomb_defused', ['X', 'Y', 'Z'], ['total_rounds_played']);
-    const explosions = safeEvent(file, 'bomb_exploded', ['X', 'Y', 'Z'], ['total_rounds_played']);
-    const bombDrops = safeEvent(file, 'bomb_dropped', ['X', 'Y', 'Z'], ['total_rounds_played']);
-    const bombPickups = safeEvent(file, 'bomb_pickup', ['X', 'Y', 'Z'], ['total_rounds_played']);
+    const bombPlayerProps = ['X', 'Y', 'Z', 'player_name', 'player_steamid'];
+    const plants = safeEvent(file, 'bomb_planted', bombPlayerProps, ['total_rounds_played']);
+    const defuses = safeEvent(file, 'bomb_defused', bombPlayerProps, ['total_rounds_played']);
+    const explosions = safeEvent(file, 'bomb_exploded', bombPlayerProps, ['total_rounds_played']);
+    const bombDrops = safeEvent(file, 'bomb_dropped', bombPlayerProps, ['total_rounds_played']);
+    const bombPickups = safeEvent(file, 'bomb_pickup', bombPlayerProps, ['total_rounds_played']);
 
     reportProgress(24, 'Utility eventleri ayrıştırılıyor…');
     const smokeStarts = safeEvent(file, 'smokegrenade_detonate', ['player_steamid', 'player_name'], []);
@@ -281,7 +286,7 @@ parentPort.on('message', ({ file }) => {
       reportProgress(32, `${wantedTicks.length.toLocaleString('tr-TR')} radar tick'i hazırlanıyor…`);
       try {
         const rows = parseTicks(file, [
-          'X','Y','Z','pitch','yaw','fov','duck_amount','in_crouch','health','armor','is_alive','team_num','team_name','team_clan_name','active_weapon_name','active_weapon_ammo','inventory'
+          'X','Y','Z','pitch','yaw','fov','duck_amount','in_crouch','health','armor','is_alive','team_num','team_name','team_clan_name','player_color','active_weapon_name','active_weapon_ammo','total_ammo_left','flash_duration','inventory'
         ], wantedTicks);
         reportProgress(67, 'Radar frame’leri indeksleniyor…');
         frames = buildFrames(rows);
