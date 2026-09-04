@@ -11,6 +11,10 @@ fn main() {
         .compile("matchframe_native");
 
     let target = env::var("TARGET").unwrap_or_default();
+    if target.contains("windows") {
+        println!("cargo:rustc-link-lib=user32");
+    }
+
     if target.contains("windows") && target.contains("x86_64") {
         let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
         let object = out_dir.join("fastmath.obj");
