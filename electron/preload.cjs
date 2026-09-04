@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('matchframe', {
     open: () => ipcRenderer.invoke('demo:open'),
     launch: (path) => ipcRenderer.invoke('demo:launch', path)
   },
+  capture: {
+    status: () => ipcRenderer.invoke('capture:status')
+  },
   core: {
     status: () => ipcRenderer.invoke('core:status'),
     command: (command) => ipcRenderer.invoke('core:command', command),
