@@ -36,11 +36,61 @@ function buildFrames(rows) {
       armor: finite(row.armor) ?? 0,
       is_alive: Boolean(row.is_alive),
       team_num: finite(row.team_num) ?? 0,
+      team_name: String(row.team_name ?? ''),
+      team_clan_name: String(row.team_clan_name ?? ''),
       active_weapon_name: String(row.active_weapon_name ?? ''),
       active_weapon_ammo: finite(row.active_weapon_ammo)
     });
   }
   return [...byTick.values()].sort((a, b) => a.tick - b.tick);
+}
+
+function cleanTeamName(value) {
+  const name = String(value ?? '').trim();
+  if (!name) return '';
+  if (/^(t|terrorist|terrorists)$/i.test(name)) return '';
+  if (/^(ct|counter[- _]?terrorist|counter[- _]?terrorists)$/i.test(name)) return '';
+  return name;
+}
+
+function enrichPlayersWithTeams(players, frames) {
+  const latest = new Map();
+  const wanted = new Set((players || []).map((p) => String(p.steamid ?? '')).filter(Boolean));
+  for (let i = frames.length - 1; i >= 0 && latest.size < wanted.size; i--) {
+    for (const state of frames[i].players || []) {
+      const steamid = String(state.steamid || '');
+      const teamNum = Number(state.team_num || 0);
+      if (!steamid || !wanted.has(steamid) || latest.has(steamid) || (teamNum !== 2 && teamNum !== 3)) continue;
+      latest.set(steamid, state);
+    }
+  }
+
+  const votes = new Map([[2, new Map()], [3, new Map()]]);
+  for (const state of latest.values()) {
+    const teamNum = Number(state.team_num || 0);
+    const name = cleanTeamName(state.team_clan_name) || cleanTeamName(state.team_name);
+    if (!name || !votes.has(teamNum)) continue;
+    const bucket = votes.get(teamNum);
+    bucket.set(name, (bucket.get(name) || 0) + 1);
+  }
+
+  const labels = new Map();
+  for (const teamNum of [2, 3]) {
+    const entries = [...votes.get(teamNum).entries()].sort((a, b) => b[1] - a[1]);
+    labels.set(teamNum, entries[0]?.[0] || (teamNum === 2 ? 'Terrorists' : 'Counter-Terrorists'));
+  }
+
+  return (players || []).map((player) => {
+    const steamid = String(player.steamid ?? '');
+    const state = latest.get(steamid);
+    const teamNum = Number(state?.team_num ?? player.team_number ?? 0);
+    const ownName = cleanTeamName(state?.team_clan_name) || cleanTeamName(state?.team_name);
+    return {
+      ...player,
+      team_number: teamNum,
+      team_name: ownName || labels.get(teamNum) || 'Takımsız'
+    };
+  });
 }
 
 function buildCameraTracks(data) {
@@ -163,7 +213,7 @@ function buildRoundMeta(roundStarts, roundEnds, maxTick) {
 parentPort.on('message', ({ file }) => {
   try {
     const header = parseHeader(file);
-    const players = parsePlayerInfo(file);
+    const rawPlayers = parsePlayerInfo(file);
     const roundStarts = safeEvent(file, 'round_start', [], ['round_start_time', 'total_rounds_played', 'is_warmup_period']);
     const roundEnds = safeEvent(file, 'round_end', [], ['total_rounds_played', 'is_warmup_period']);
     const deaths = safeEvent(file, 'player_death', ['player_steamid', 'player_name'], ['total_rounds_played']);
@@ -185,7 +235,7 @@ parentPort.on('message', ({ file }) => {
       for (let tick = 0; tick <= maxTick; tick += sampleStep) wantedTicks.push(tick);
       try {
         const rows = parseTicks(file, [
-          'X','Y','Z','pitch','yaw','fov','duck_amount','in_crouch','health','armor','is_alive','team_num','active_weapon_name','active_weapon_ammo'
+          'X','Y','Z','pitch','yaw','fov','duck_amount','in_crouch','health','armor','is_alive','team_num','team_name','team_clan_name','active_weapon_name','active_weapon_ammo'
         ], wantedTicks);
         frames = buildFrames(rows);
         if (frames.length) maxTick = Math.max(maxTick, frames[frames.length - 1].tick);
@@ -193,6 +243,8 @@ parentPort.on('message', ({ file }) => {
         viewerError = error?.message || String(error);
       }
     }
+
+    const players = enrichPlayersWithTeams(rawPlayers, frames);
 
     let cameraTracks = [];
     let cameraError = null;
