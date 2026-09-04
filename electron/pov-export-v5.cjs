@@ -11,6 +11,8 @@ const VRF_SHA256 = 'd32ab327b8bbb42a2528866afb03bb582bdb779d0005488da32b90292afd
 const CACHE_VERSION = 'v6';
 const MIN_GLB_SIZE = 256 * 1024;
 const COPY_BUFFER_SIZE = 8 * 1024 * 1024;
+const JSON_CHUNK = 0x4e4f534a;
+const BIN_CHUNK = 0x004e4942;
 const jobs = new Map();
 const served = new Map();
 
@@ -35,9 +37,6 @@ function execFileAsync(exe, args, options = {}) {
       }
     });
 
-    // Electron/Node may only kill the direct process on Windows. If Source2Viewer ever
-    // spawns a child process, kill the full tree after the timeout so no splash/spinner can
-    // remain orphaned forever.
     const treeTimer = setTimeout(() => {
       if (!child.pid || child.exitCode !== null) return;
       execFile('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true }, () => {});
@@ -214,6 +213,15 @@ async function readExact(handle, buffer, position) {
   }
 }
 
+async function writeExact(handle, buffer, position) {
+  let offset = 0;
+  while (offset < buffer.length) {
+    const { bytesWritten } = await handle.write(buffer, offset, buffer.length - offset, position + offset);
+    if (!bytesWritten) throw new Error('GLB hedef dosyasına yazılamadı.');
+    offset += bytesWritten;
+  }
+}
+
 async function readGlbStructure(file) {
   const stat = await fs.promises.stat(file);
   if (stat.size < 20) throw new Error('GLB dosyası çok küçük.');
@@ -231,6 +239,7 @@ async function readGlbStructure(file) {
     const chunks = [];
     let position = 12;
     let jsonChunk = null;
+    let binChunk = null;
     while (position + 8 <= declaredLength) {
       const chunkHeader = Buffer.allocUnsafe(8);
       await readExact(handle, chunkHeader, position);
@@ -240,7 +249,8 @@ async function readGlbStructure(file) {
       if (dataOffset + length > declaredLength) throw new Error('GLB chunk sınırları bozuk.');
       const chunk = { type, length, dataOffset };
       chunks.push(chunk);
-      if (type === 0x4e4f534a && !jsonChunk) jsonChunk = chunk;
+      if (type === JSON_CHUNK && !jsonChunk) jsonChunk = chunk;
+      if (type === BIN_CHUNK && !binChunk) binChunk = chunk;
       position = dataOffset + length;
     }
     if (!jsonChunk) throw new Error('GLB JSON chunk bulunamadı.');
@@ -250,7 +260,7 @@ async function readGlbStructure(file) {
     await readExact(handle, jsonBuffer, jsonChunk.dataOffset);
     const jsonText = jsonBuffer.toString('utf8').replace(/[\u0000\s]+$/g, '');
     const gltf = JSON.parse(jsonText);
-    return { stat, declaredLength, chunks, jsonChunk, gltf };
+    return { stat, declaredLength, chunks, jsonChunk, binChunk, gltf };
   } finally {
     await handle.close();
   }
@@ -281,8 +291,46 @@ async function isUsableRawGlb(file) {
   }
 }
 
+function collectBufferViewRefs(value, out, skipImages = false, keyName = '') {
+  if (!value || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    for (const item of value) collectBufferViewRefs(item, out, skipImages, keyName);
+    return;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (skipImages && key === 'images') continue;
+    if (key === 'bufferView' && Number.isInteger(child)) out.add(child);
+    else collectBufferViewRefs(child, out, skipImages, key);
+  }
+}
+
+function remapBufferViewRefs(value, mapping) {
+  if (!value || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    for (const item of value) remapBufferViewRefs(item, mapping);
+    return;
+  }
+  for (const key of Object.keys(value)) {
+    const child = value[key];
+    if (key === 'bufferView' && Number.isInteger(child)) {
+      if (mapping.has(child)) value[key] = mapping.get(child);
+      else delete value[key];
+    } else {
+      remapBufferViewRefs(child, mapping);
+    }
+  }
+}
+
 function sanitizeGeometryJson(gltf) {
   const oldMaterials = Array.isArray(gltf.materials) ? gltf.materials : [];
+  const imageBufferViews = new Set();
+  for (const image of gltf.images || []) {
+    if (Number.isInteger(image?.bufferView)) imageBufferViews.add(image.bufferView);
+  }
+  const nonImageRefs = new Set();
+  collectBufferViewRefs(gltf, nonImageRefs, true);
+  const removableImageViews = new Set([...imageBufferViews].filter((index) => !nonImageRefs.has(index)));
+
   delete gltf.images;
   delete gltf.textures;
   delete gltf.samplers;
@@ -338,35 +386,79 @@ function sanitizeGeometryJson(gltf) {
     matchframeSafeColor: true,
     cacheVersion: CACHE_VERSION
   };
-  return gltf;
+  return { gltf, removableImageViews };
+}
+
+function canCompactBin(gltf, structure, removableImageViews) {
+  if (!structure.binChunk || !removableImageViews.size) return false;
+  if (!Array.isArray(gltf.bufferViews) || !gltf.bufferViews.length) return false;
+  if (!Array.isArray(gltf.buffers) || gltf.buffers.length !== 1) return false;
+  if (gltf.bufferViews.some((view) => Number(view?.buffer || 0) !== 0)) return false;
+  if ((gltf.extensionsUsed || []).includes('EXT_meshopt_compression')) return false;
+  if (gltf.bufferViews.some((view) => view?.extensions?.EXT_meshopt_compression)) return false;
+  return true;
+}
+
+function buildBinCompaction(gltf, structure, removableImageViews) {
+  if (!canCompactBin(gltf, structure, removableImageViews)) return null;
+
+  const oldViews = gltf.bufferViews.map((view) => ({ ...view }));
+  const mapping = new Map();
+  const newViews = [];
+  const copyPlan = [];
+  let outputOffset = 0;
+
+  for (let oldIndex = 0; oldIndex < oldViews.length; oldIndex++) {
+    if (removableImageViews.has(oldIndex)) continue;
+    const view = oldViews[oldIndex];
+    const byteLength = Number(view.byteLength || 0);
+    const sourceOffset = Number(view.byteOffset || 0);
+    if (!Number.isFinite(byteLength) || byteLength < 0 || !Number.isFinite(sourceOffset) || sourceOffset < 0) return null;
+    if (sourceOffset + byteLength > structure.binChunk.length) return null;
+
+    outputOffset = (outputOffset + 3) & ~3;
+    const newIndex = newViews.length;
+    mapping.set(oldIndex, newIndex);
+    const newView = { ...view, byteOffset: outputOffset };
+    newViews.push(newView);
+    copyPlan.push({ sourceOffset, byteLength, destinationOffset: outputOffset });
+    outputOffset += byteLength;
+  }
+
+  if (!mapping.size) return null;
+  remapBufferViewRefs(gltf, mapping);
+  gltf.bufferViews = newViews;
+  const binLength = (outputOffset + 3) & ~3;
+  gltf.buffers[0].byteLength = binLength;
+  return { copyPlan, binLength };
 }
 
 async function copyRange(sourceHandle, destinationHandle, sourcePosition, length, destinationPosition) {
-  const buffer = Buffer.allocUnsafe(Math.min(COPY_BUFFER_SIZE, Math.max(1, length)));
+  if (!length) return;
+  const buffer = Buffer.allocUnsafe(Math.min(COPY_BUFFER_SIZE, length));
   let copied = 0;
   while (copied < length) {
     const wanted = Math.min(buffer.length, length - copied);
     const { bytesRead } = await sourceHandle.read(buffer, 0, wanted, sourcePosition + copied);
     if (!bytesRead) throw new Error('GLB kopyalanırken kaynak beklenmedik şekilde sona erdi.');
-    let written = 0;
-    while (written < bytesRead) {
-      const result = await destinationHandle.write(buffer, written, bytesRead - written, destinationPosition + copied + written);
-      if (!result.bytesWritten) throw new Error('GLB kopyalanırken hedefe yazılamadı.');
-      written += result.bytesWritten;
-    }
+    await writeExact(destinationHandle, buffer.subarray(0, bytesRead), destinationPosition + copied);
     copied += bytesRead;
   }
 }
 
 async function sanitizeGeometryGlbFile(source, destination) {
   const structure = await readGlbStructure(source);
-  const gltf = sanitizeGeometryJson(structure.gltf);
-  let json = Buffer.from(JSON.stringify(gltf), 'utf8');
-  const pad = (4 - (json.length % 4)) % 4;
-  if (pad) json = Buffer.concat([json, Buffer.alloc(pad, 0x20)]);
+  const sanitized = sanitizeGeometryJson(structure.gltf);
+  const compaction = buildBinCompaction(sanitized.gltf, structure, sanitized.removableImageViews);
+
+  let json = Buffer.from(JSON.stringify(sanitized.gltf), 'utf8');
+  const jsonPad = (4 - (json.length % 4)) % 4;
+  if (jsonPad) json = Buffer.concat([json, Buffer.alloc(jsonPad, 0x20)]);
 
   const totalLength = 12 + structure.chunks.reduce((sum, chunk) => {
-    return sum + 8 + (chunk === structure.jsonChunk ? json.length : chunk.length);
+    if (chunk === structure.jsonChunk) return sum + 8 + json.length;
+    if (chunk === structure.binChunk && compaction) return sum + 8 + compaction.binLength;
+    return sum + 8 + chunk.length;
   }, 0);
   if (totalLength > 0xffffffff) throw new Error('GLB 4 GB sınırını aşıyor.');
 
@@ -377,24 +469,37 @@ async function sanitizeGeometryGlbFile(source, destination) {
     header.writeUInt32LE(0x46546c67, 0);
     header.writeUInt32LE(2, 4);
     header.writeUInt32LE(totalLength, 8);
-    await destinationHandle.write(header, 0, header.length, 0);
+    await writeExact(destinationHandle, header, 0);
 
     let outPosition = 12;
     for (const chunk of structure.chunks) {
-      const dataLength = chunk === structure.jsonChunk ? json.length : chunk.length;
+      const isJson = chunk === structure.jsonChunk;
+      const isCompactedBin = chunk === structure.binChunk && compaction;
+      const dataLength = isJson ? json.length : isCompactedBin ? compaction.binLength : chunk.length;
       const chunkHeader = Buffer.allocUnsafe(8);
       chunkHeader.writeUInt32LE(dataLength, 0);
       chunkHeader.writeUInt32LE(chunk.type, 4);
-      await destinationHandle.write(chunkHeader, 0, 8, outPosition);
+      await writeExact(destinationHandle, chunkHeader, outPosition);
       outPosition += 8;
 
-      if (chunk === structure.jsonChunk) {
-        await destinationHandle.write(json, 0, json.length, outPosition);
+      if (isJson) {
+        await writeExact(destinationHandle, json, outPosition);
+      } else if (isCompactedBin) {
+        for (const item of compaction.copyPlan) {
+          await copyRange(
+            sourceHandle,
+            destinationHandle,
+            structure.binChunk.dataOffset + item.sourceOffset,
+            item.byteLength,
+            outPosition + item.destinationOffset
+          );
+        }
       } else {
         await copyRange(sourceHandle, destinationHandle, chunk.dataOffset, chunk.length, outPosition);
       }
       outPosition += dataLength;
     }
+    await destinationHandle.truncate(totalLength);
   } finally {
     await Promise.allSettled([sourceHandle.close(), destinationHandle.close()]);
   }
@@ -417,7 +522,9 @@ async function findReusableRaw(cacheRoot, map) {
   const direct = path.join(cacheRoot, `${map}.v3.glb`);
   if (await isUsableRawGlb(direct)) return direct;
 
-  for (const version of ['v6', 'v5', 'v4', 'v3']) {
+  // Prefer old exports that still contain the original image bufferView metadata. v6 can then
+  // physically remove those image bytes instead of merely ignoring the texture references.
+  for (const version of ['v3', 'v4', 'v5', 'v6']) {
     const exportDir = path.join(cacheRoot, `export-${version}`);
     const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
     if (!glbs.length) continue;
@@ -438,8 +545,19 @@ async function buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb) {
   await fs.promises.rm(tempFile, { force: true });
 
   try {
-    // Fast path: old v4/v5 caches are already texture-free. Reuse them instantly instead
-    // of launching Source2Viewer again just because the cache version changed.
+    // Prefer the old raw v3/export output. It lets us remove embedded texture payloads from the
+    // BIN chunk while streaming, which makes the final file dramatically smaller and faster to
+    // load than the old v4/v5 caches that only removed JSON texture references.
+    const rawPrevious = await findReusableRaw(cacheRoot, map);
+    if (rawPrevious) {
+      await sanitizeGeometryGlbFile(rawPrevious, tempFile);
+      await atomicReplace(tempFile, cachedGlb);
+      return 'compacted-existing-export';
+    }
+
+    // If the raw source was already cleaned up, an old safe cache is still better than invoking
+    // Source2Viewer again. Babylon's own loading overlay is disabled by pov.js, so this remains
+    // a usable fallback even when that legacy cache is larger than ideal.
     const safePrevious = await findSafePreviousCache(cacheRoot, map);
     if (safePrevious) {
       await fs.promises.copyFile(safePrevious, tempFile);
@@ -447,18 +565,8 @@ async function buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb) {
       return 'reused-safe-cache';
     }
 
-    // Second fast path: if an older raw/export GLB exists, only rewrite its tiny JSON chunk.
-    // The huge BIN chunk is streamed in 8 MB pieces, so MatchFrame no longer allocates several
-    // copies of an Inferno GLB in RAM and no longer freezes/restarts the renderer while converting.
-    const rawPrevious = await findReusableRaw(cacheRoot, map);
-    if (rawPrevious) {
-      await sanitizeGeometryGlbFile(rawPrevious, tempFile);
-      await atomicReplace(tempFile, cachedGlb);
-      return 'converted-existing-cache';
-    }
-
-    // True first run only. Keep the CLI hidden and geometry-only; it is never invoked when any
-    // usable previous MatchFrame export exists.
+    // True first run only. Keep the CLI hidden and geometry-only; never use its heavy texture
+    // export path. A hard timeout also prevents a stuck child process from living forever.
     const cli = await ensureVrf();
     const exportDir = path.join(cacheRoot, `export-${CACHE_VERSION}`);
     await fs.promises.rm(exportDir, { recursive: true, force: true });
@@ -512,7 +620,7 @@ async function prepare(mapName) {
       map,
       url: registerAsset(cachedGlb),
       sourceScale: 0.0254,
-      renderer: `Source 2 Viewer ${VRF_VERSION} cached geometry / streamed safe-colour conversion`,
+      renderer: `Source 2 Viewer ${VRF_VERSION} cached geometry / compact safe-colour conversion`,
       cacheVersion: CACHE_VERSION,
       cacheSource,
       cs2RunningRequired: false
