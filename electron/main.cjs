@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, desktopCapturer, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, desktopCapturer, session, net } = require('electron');
 const { Worker } = require('node:worker_threads');
 const { spawn, execFile } = require('node:child_process');
 const fs = require('node:fs');
@@ -9,6 +9,8 @@ let mainWindow;
 let core;
 let nextRequestId = 1;
 const pending = new Map();
+const RADAR_SOURCE = 'https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/main';
+const RADAR_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -127,6 +129,78 @@ function configureDisplayCapture() {
   });
 }
 
+function parseOverviewText(text) {
+  const number = (key) => {
+    const match = text.match(new RegExp(`"${key}"\\s+"?(-?[0-9.]+)"?`, 'i'));
+    return match ? Number(match[1]) : null;
+  };
+  const posX = number('pos_x');
+  const posY = number('pos_y');
+  const scale = number('scale');
+  if (![posX, posY, scale].every(Number.isFinite) || scale <= 0) {
+    throw new Error('Radar overview koordinatları okunamadı.');
+  }
+  return {
+    posX,
+    posY,
+    scale,
+    rotate: number('rotate') || 0,
+    zoom: number('zoom') || 1
+  };
+}
+
+async function cacheNeedsRefresh(file) {
+  try {
+    const stat = await fs.promises.stat(file);
+    return Date.now() - stat.mtimeMs > RADAR_CACHE_MAX_AGE;
+  } catch (_) {
+    return true;
+  }
+}
+
+async function fetchToFile(url, file, binary) {
+  const response = await net.fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Radar asset HTTP ${response.status}`);
+  const data = binary ? Buffer.from(await response.arrayBuffer()) : await response.text();
+  await fs.promises.writeFile(file, data);
+}
+
+async function loadRadarAsset(mapName) {
+  const map = String(mapName || '').trim().toLowerCase();
+  if (!/^[a-z0-9_]+$/.test(map)) throw new Error('Geçersiz map adı.');
+
+  const cacheDir = path.join(app.getPath('userData'), 'radars');
+  await fs.promises.mkdir(cacheDir, { recursive: true });
+  const imagePath = path.join(cacheDir, `${map}_radar_psd.png`);
+  const infoPath = path.join(cacheDir, `${map}.txt`);
+  const imageUrl = `${RADAR_SOURCE}/images/radars/${map}_radar_psd.png`;
+  const infoUrl = `${RADAR_SOURCE}/data/radar_info/${map}.txt`;
+
+  const imageRefresh = await cacheNeedsRefresh(imagePath);
+  const infoRefresh = await cacheNeedsRefresh(infoPath);
+  if (imageRefresh || infoRefresh) {
+    try {
+      await Promise.all([
+        imageRefresh ? fetchToFile(imageUrl, imagePath, true) : Promise.resolve(),
+        infoRefresh ? fetchToFile(infoUrl, infoPath, false) : Promise.resolve()
+      ]);
+    } catch (error) {
+      if (!fs.existsSync(imagePath) || !fs.existsSync(infoPath)) throw error;
+    }
+  }
+
+  const [image, overviewText] = await Promise.all([
+    fs.promises.readFile(imagePath),
+    fs.promises.readFile(infoPath, 'utf8')
+  ]);
+  return {
+    map,
+    dataUrl: `data:image/png;base64,${image.toString('base64')}`,
+    overview: parseOverviewText(overviewText),
+    source: 'Valve CS2 radar cache'
+  };
+}
+
 app.whenReady().then(() => {
   configureDisplayCapture();
   startCore();
@@ -166,6 +240,7 @@ ipcMain.handle('capture:status', async () => {
   return { available: Boolean(source), name: source?.name || null };
 });
 
+ipcMain.handle('radar:load', async (_event, mapName) => loadRadarAsset(mapName));
 ipcMain.handle('core:status', async () => coreRequest('backend_info'));
 ipcMain.handle('core:command', async (_event, command) => coreRequest('console', { command }));
 ipcMain.handle('core:request', async (_event, action, payload) => coreRequest(action, payload));
