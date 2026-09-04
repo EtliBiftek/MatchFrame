@@ -95,14 +95,28 @@ function coreRequest(action, payload = {}) {
   });
 }
 
-function parseDemo(file) {
+function parseDemo(file, onProgress) {
   return new Promise((resolve, reject) => {
     const worker = new Worker(path.join(__dirname, 'demo-worker.cjs'));
-    worker.once('message', (message) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return false;
+      settled = true;
       worker.terminate();
+      return true;
+    };
+    worker.on('message', (message) => {
+      if (message?.type === 'progress') {
+        onProgress?.({ percent: message.percent, stage: message.stage });
+        return;
+      }
+      if (!finish()) return;
       message.ok ? resolve(message.data) : reject(new Error(message.error));
     });
-    worker.once('error', reject);
+    worker.once('error', (error) => {
+      if (!finish()) return;
+      reject(error);
+    });
     worker.postMessage({ file });
   });
 }
@@ -115,10 +129,6 @@ function steamRoots() {
   if (pf) roots.add(path.join(pf, 'Steam'));
   roots.add('C:\\Program Files (x86)\\Steam');
   return [...roots].filter(fs.existsSync);
-}
-
-function steamCandidates() {
-  return steamRoots().map((root) => path.join(root, 'steam.exe')).filter(fs.existsSync);
 }
 
 function steamLibraries() {
@@ -141,13 +151,6 @@ function findCs2GameRoot() {
     if (fs.existsSync(path.join(candidate, 'gameinfo.gi'))) return candidate;
   }
   return null;
-}
-
-async function launchDemo(file) {
-  const steam = steamCandidates()[0];
-  if (!steam) throw new Error('Steam.exe bulunamadı.');
-  execFile(steam, ['-applaunch', '730', '+playdemo', file], { windowsHide: false });
-  return true;
 }
 
 function parseOverviewText(text) {
@@ -414,14 +417,17 @@ ipcMain.handle('window:minimize', () => mainWindow.minimize());
 ipcMain.handle('window:maximize', () => mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
 ipcMain.handle('window:close', () => mainWindow.close());
 
-ipcMain.handle('demo:open', async () => {
+ipcMain.handle('demo:open', async (event) => {
   const result = await dialog.showOpenDialog(mainWindow, { properties: ['openFile'], filters: [{ name: 'Counter-Strike 2 Demo', extensions: ['dem'] }] });
   if (result.canceled || !result.filePaths[0]) return { canceled: true };
   const file = result.filePaths[0];
-  const data = await parseDemo(file);
+  const sendProgress = (progress) => {
+    if (!event.sender.isDestroyed()) event.sender.send('demo:progress', progress);
+  };
+  sendProgress({ percent: 0, stage: 'Demo dosyası seçildi. Parser başlatılıyor…' });
+  const data = await parseDemo(file, sendProgress);
   return { canceled: false, file, ...data };
 });
-ipcMain.handle('demo:launch', async (_event, file) => { await launchDemo(file); return { ok: true }; });
 ipcMain.handle('radar:load', async (_event, mapName) => loadRadarAsset(mapName));
 ipcMain.handle('pov:prepare', async (_event, mapName) => prepareOfflinePov(mapName));
 ipcMain.handle('voice:prepare', async (_event, file) => prepareVoice(file));
