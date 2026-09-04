@@ -7,7 +7,13 @@ contextBridge.exposeInMainWorld('matchframe', {
     close: () => ipcRenderer.invoke('window:close')
   },
   demo: {
-    open: () => ipcRenderer.invoke('demo:open')
+    open: () => ipcRenderer.invoke('demo:open'),
+    onProgress: (callback) => {
+      if (typeof callback !== 'function') return () => {};
+      const listener = (_event, payload) => callback(payload);
+      ipcRenderer.on('demo:progress', listener);
+      return () => ipcRenderer.removeListener('demo:progress', listener);
+    }
   },
   radar: {
     load: (mapName) => ipcRenderer.invoke('radar:load', mapName)
