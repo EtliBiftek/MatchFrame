@@ -8,25 +8,41 @@ const { pathToFileURL } = require('node:url');
 const VRF_VERSION = '20.0';
 const VRF_URL = `https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/${VRF_VERSION}/cli-windows-x64.zip`;
 const VRF_SHA256 = 'd32ab327b8bbb42a2528866afb03bb582bdb779d0005488da32b90292afd3ff5';
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
+const MIN_GLB_SIZE = 256 * 1024;
+const COPY_BUFFER_SIZE = 8 * 1024 * 1024;
 const jobs = new Map();
 const served = new Map();
 
 function execFileAsync(exe, args, options = {}) {
   return new Promise((resolve, reject) => {
-    execFile(exe, args, {
+    const timeout = Number(options.timeout || 180000);
+    const child = execFile(exe, args, {
       windowsHide: true,
+      shell: false,
       maxBuffer: 32 * 1024 * 1024,
-      timeout: 180000,
+      timeout,
       killSignal: 'SIGKILL',
+      env: { ...process.env, DOTNET_NOLOGO: '1' },
       ...options
     }, (error, stdout, stderr) => {
       if (error) {
         const details = String(stderr || stdout || '').trim();
         error.message = `${error.message}${details ? `\n${details}` : ''}`;
         reject(error);
-      } else resolve({ stdout, stderr });
+      } else {
+        resolve({ stdout, stderr });
+      }
     });
+
+    // Electron/Node may only kill the direct process on Windows. If Source2Viewer ever
+    // spawns a child process, kill the full tree after the timeout so no splash/spinner can
+    // remain orphaned forever.
+    const treeTimer = setTimeout(() => {
+      if (!child.pid || child.exitCode !== null) return;
+      execFile('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true }, () => {});
+    }, timeout + 1500);
+    child.once('exit', () => clearTimeout(treeTimer));
   });
 }
 
@@ -53,7 +69,10 @@ async function expandZip(zip, destination) {
   await fs.promises.mkdir(destination, { recursive: true });
   const z = zip.replace(/'/g, "''");
   const d = destination.replace(/'/g, "''");
-  await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `Expand-Archive -LiteralPath '${z}' -DestinationPath '${d}' -Force`], { timeout: 180000 });
+  await execFileAsync('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-Command',
+    `Expand-Archive -LiteralPath '${z}' -DestinationPath '${d}' -Force`
+  ], { timeout: 180000 });
 }
 
 async function findRecursive(root, predicate) {
@@ -91,6 +110,7 @@ async function ensureVrf() {
   const root = path.join(app.getPath('userData'), 'tools', `source2viewer-${VRF_VERSION}`);
   const existing = await findRecursive(root, (_full, name) => name.toLowerCase() === 'source2viewer-cli.exe');
   if (existing) return existing;
+
   await fs.promises.rm(root, { recursive: true, force: true });
   await fs.promises.mkdir(root, { recursive: true });
   const zip = path.join(root, 'tool.zip');
@@ -100,6 +120,7 @@ async function ensureVrf() {
     await fs.promises.rm(root, { recursive: true, force: true });
     throw new Error('Source 2 Viewer indirmesi SHA-256 doğrulamasından geçmedi.');
   }
+
   const unpacked = path.join(root, 'bin');
   await expandZip(zip, unpacked);
   const exe = await findRecursive(unpacked, (_full, name) => name.toLowerCase() === 'source2viewer-cli.exe');
@@ -122,7 +143,9 @@ function steamLibraries() {
   for (const root of steamRoots()) {
     try {
       const text = fs.readFileSync(path.join(root, 'steamapps', 'libraryfolders.vdf'), 'utf8');
-      for (const match of text.matchAll(/"path"\s+"([^"]+)"/g)) libs.add(match[1].replace(/\\\\/g, '\\'));
+      for (const match of text.matchAll(/"path"\s+"([^"]+)"/g)) {
+        libs.add(match[1].replace(/\\\\/g, '\\'));
+      }
     } catch (_) {}
   }
   return [...libs];
@@ -169,84 +192,239 @@ function palette(name, index) {
     [/(stone|wall|plaster|stucco|concrete)/, [0.61, 0.57, 0.49, 1]]
   ];
   for (const [re, c] of rules) if (re.test(key)) return c;
-  const fallback = [[0.58,0.50,0.39,1],[0.45,0.40,0.34,1],[0.64,0.58,0.47,1],[0.40,0.43,0.41,1],[0.52,0.37,0.28,1],[0.38,0.41,0.46,1]];
-  return fallback[index % fallback.length];
+  const fallback = [
+    [0.58, 0.50, 0.39, 1], [0.45, 0.40, 0.34, 1], [0.64, 0.58, 0.47, 1],
+    [0.40, 0.43, 0.41, 1], [0.52, 0.37, 0.28, 1], [0.38, 0.41, 0.46, 1]
+  ];
+  let hash = 2166136261;
+  const text = key || `mesh-${index}`;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return fallback[(hash >>> 0) % fallback.length];
 }
 
-function sanitizeGeometryGlb(input) {
-  if (!Buffer.isBuffer(input) || input.length < 20 || input.readUInt32LE(0) !== 0x46546c67 || input.readUInt32LE(4) !== 2) {
-    throw new Error('Geçersiz glTF 2.0 GLB.');
+async function readExact(handle, buffer, position) {
+  let offset = 0;
+  while (offset < buffer.length) {
+    const { bytesRead } = await handle.read(buffer, offset, buffer.length - offset, position + offset);
+    if (!bytesRead) throw new Error('GLB beklenmedik şekilde sona erdi.');
+    offset += bytesRead;
   }
-  const chunks = [];
-  let offset = 12;
-  let jsonIndex = -1;
-  while (offset + 8 <= input.length) {
-    const len = input.readUInt32LE(offset);
-    const type = input.readUInt32LE(offset + 4);
-    const start = offset + 8;
-    const end = start + len;
-    if (end > input.length) throw new Error('GLB chunk sınırları bozuk.');
-    chunks.push({ type, data: Buffer.from(input.subarray(start, end)) });
-    if (type === 0x4e4f534a) jsonIndex = chunks.length - 1;
-    offset = end;
-  }
-  if (jsonIndex < 0) throw new Error('GLB JSON chunk bulunamadı.');
-  const gltf = JSON.parse(chunks[jsonIndex].data.toString('utf8').replace(/[\u0000\s]+$/g, ''));
+}
 
+async function readGlbStructure(file) {
+  const stat = await fs.promises.stat(file);
+  if (stat.size < 20) throw new Error('GLB dosyası çok küçük.');
+
+  const handle = await fs.promises.open(file, 'r');
+  try {
+    const header = Buffer.allocUnsafe(12);
+    await readExact(handle, header, 0);
+    const magic = header.readUInt32LE(0);
+    const version = header.readUInt32LE(4);
+    const declaredLength = header.readUInt32LE(8);
+    if (magic !== 0x46546c67 || version !== 2) throw new Error('Geçersiz glTF 2.0 GLB.');
+    if (declaredLength > stat.size || declaredLength < 20) throw new Error('GLB uzunluğu geçersiz.');
+
+    const chunks = [];
+    let position = 12;
+    let jsonChunk = null;
+    while (position + 8 <= declaredLength) {
+      const chunkHeader = Buffer.allocUnsafe(8);
+      await readExact(handle, chunkHeader, position);
+      const length = chunkHeader.readUInt32LE(0);
+      const type = chunkHeader.readUInt32LE(4);
+      const dataOffset = position + 8;
+      if (dataOffset + length > declaredLength) throw new Error('GLB chunk sınırları bozuk.');
+      const chunk = { type, length, dataOffset };
+      chunks.push(chunk);
+      if (type === 0x4e4f534a && !jsonChunk) jsonChunk = chunk;
+      position = dataOffset + length;
+    }
+    if (!jsonChunk) throw new Error('GLB JSON chunk bulunamadı.');
+    if (jsonChunk.length > 128 * 1024 * 1024) throw new Error('GLB JSON chunk olağandışı büyük.');
+
+    const jsonBuffer = Buffer.allocUnsafe(jsonChunk.length);
+    await readExact(handle, jsonBuffer, jsonChunk.dataOffset);
+    const jsonText = jsonBuffer.toString('utf8').replace(/[\u0000\s]+$/g, '');
+    const gltf = JSON.parse(jsonText);
+    return { stat, declaredLength, chunks, jsonChunk, gltf };
+  } finally {
+    await handle.close();
+  }
+}
+
+async function isSafeGlb(file) {
+  try {
+    const stat = await fs.promises.stat(file);
+    if (stat.size < MIN_GLB_SIZE) return false;
+    const { gltf } = await readGlbStructure(file);
+    const hasGeometry = Array.isArray(gltf.meshes) && gltf.meshes.some((mesh) => Array.isArray(mesh.primitives) && mesh.primitives.length);
+    const hasTextureRefs = Array.isArray(gltf.images) || Array.isArray(gltf.textures);
+    const markedSafe = Boolean(gltf.asset?.extras?.matchframeSafeColor);
+    return hasGeometry && !hasTextureRefs && (markedSafe || Array.isArray(gltf.materials));
+  } catch (_) {
+    return false;
+  }
+}
+
+async function isUsableRawGlb(file) {
+  try {
+    const stat = await fs.promises.stat(file);
+    if (stat.size < MIN_GLB_SIZE) return false;
+    const { gltf } = await readGlbStructure(file);
+    return Array.isArray(gltf.meshes) && gltf.meshes.some((mesh) => Array.isArray(mesh.primitives) && mesh.primitives.length);
+  } catch (_) {
+    return false;
+  }
+}
+
+function sanitizeGeometryJson(gltf) {
+  const oldMaterials = Array.isArray(gltf.materials) ? gltf.materials : [];
   delete gltf.images;
   delete gltf.textures;
   delete gltf.samplers;
   gltf.materials = [];
 
-  let materialIndex = 0;
+  const materialByColor = new Map();
+  let primitiveIndex = 0;
   for (const mesh of gltf.meshes || []) {
-    const meshName = mesh.name || `mesh-${materialIndex}`;
+    const meshName = mesh.name || `mesh-${primitiveIndex}`;
     for (const primitive of mesh.primitives || []) {
-      if (primitive.attributes) delete primitive.attributes.COLOR_0;
-      const color = palette(meshName, materialIndex);
-      primitive.material = gltf.materials.length;
-      gltf.materials.push({
-        name: `mf-${meshName}-${materialIndex}`,
-        pbrMetallicRoughness: { baseColorFactor: color, metallicFactor: 0, roughnessFactor: 1 },
-        alphaMode: 'OPAQUE',
-        doubleSided: true
-      });
-      materialIndex++;
+      if (primitive.attributes) {
+        delete primitive.attributes.COLOR_0;
+        delete primitive.attributes.TANGENT;
+        delete primitive.attributes.TEXCOORD_0;
+        delete primitive.attributes.TEXCOORD_1;
+      }
+
+      const oldMaterialName = Number.isInteger(primitive.material) ? oldMaterials[primitive.material]?.name : '';
+      const sourceName = oldMaterialName || meshName;
+      const color = palette(sourceName, primitiveIndex);
+      const colorKey = color.join(',');
+      if (!materialByColor.has(colorKey)) {
+        const index = gltf.materials.length;
+        materialByColor.set(colorKey, index);
+        gltf.materials.push({
+          name: `mf-safe-${index}`,
+          pbrMetallicRoughness: {
+            baseColorFactor: color,
+            metallicFactor: 0,
+            roughnessFactor: 1
+          },
+          alphaMode: 'OPAQUE',
+          doubleSided: true
+        });
+      }
+      primitive.material = materialByColor.get(colorKey);
+      primitiveIndex++;
     }
   }
 
-  gltf.extensionsUsed = (gltf.extensionsUsed || []).filter((x) => !/^KHR_(?:texture_transform|materials_)/i.test(String(x)));
-  gltf.extensionsRequired = (gltf.extensionsRequired || []).filter((x) => !/^KHR_(?:texture_transform|materials_)/i.test(String(x)));
-  if (!gltf.extensionsUsed.length) delete gltf.extensionsUsed;
-  if (!gltf.extensionsRequired.length) delete gltf.extensionsRequired;
-  gltf.asset = gltf.asset || { version: '2.0' };
-  gltf.asset.extras = { ...(gltf.asset.extras || {}), matchframeSafeColor: true, cacheVersion: CACHE_VERSION };
+  if (Array.isArray(gltf.extensionsUsed)) {
+    gltf.extensionsUsed = gltf.extensionsUsed.filter((x) => !/^KHR_(?:texture_transform|materials_)/i.test(String(x)));
+    if (!gltf.extensionsUsed.length) delete gltf.extensionsUsed;
+  }
+  if (Array.isArray(gltf.extensionsRequired)) {
+    gltf.extensionsRequired = gltf.extensionsRequired.filter((x) => !/^KHR_(?:texture_transform|materials_)/i.test(String(x)));
+    if (!gltf.extensionsRequired.length) delete gltf.extensionsRequired;
+  }
 
+  gltf.asset = gltf.asset || { version: '2.0' };
+  gltf.asset.extras = {
+    ...(gltf.asset.extras || {}),
+    matchframeSafeColor: true,
+    cacheVersion: CACHE_VERSION
+  };
+  return gltf;
+}
+
+async function copyRange(sourceHandle, destinationHandle, sourcePosition, length, destinationPosition) {
+  const buffer = Buffer.allocUnsafe(Math.min(COPY_BUFFER_SIZE, Math.max(1, length)));
+  let copied = 0;
+  while (copied < length) {
+    const wanted = Math.min(buffer.length, length - copied);
+    const { bytesRead } = await sourceHandle.read(buffer, 0, wanted, sourcePosition + copied);
+    if (!bytesRead) throw new Error('GLB kopyalanırken kaynak beklenmedik şekilde sona erdi.');
+    let written = 0;
+    while (written < bytesRead) {
+      const result = await destinationHandle.write(buffer, written, bytesRead - written, destinationPosition + copied + written);
+      if (!result.bytesWritten) throw new Error('GLB kopyalanırken hedefe yazılamadı.');
+      written += result.bytesWritten;
+    }
+    copied += bytesRead;
+  }
+}
+
+async function sanitizeGeometryGlbFile(source, destination) {
+  const structure = await readGlbStructure(source);
+  const gltf = sanitizeGeometryJson(structure.gltf);
   let json = Buffer.from(JSON.stringify(gltf), 'utf8');
   const pad = (4 - (json.length % 4)) % 4;
   if (pad) json = Buffer.concat([json, Buffer.alloc(pad, 0x20)]);
-  chunks[jsonIndex].data = json;
 
-  const total = 12 + chunks.reduce((sum, c) => sum + 8 + c.data.length, 0);
-  const output = Buffer.allocUnsafe(total);
-  output.writeUInt32LE(0x46546c67, 0);
-  output.writeUInt32LE(2, 4);
-  output.writeUInt32LE(total, 8);
-  let out = 12;
-  for (const chunk of chunks) {
-    output.writeUInt32LE(chunk.data.length, out);
-    output.writeUInt32LE(chunk.type, out + 4);
-    chunk.data.copy(output, out + 8);
-    out += 8 + chunk.data.length;
+  const totalLength = 12 + structure.chunks.reduce((sum, chunk) => {
+    return sum + 8 + (chunk === structure.jsonChunk ? json.length : chunk.length);
+  }, 0);
+  if (totalLength > 0xffffffff) throw new Error('GLB 4 GB sınırını aşıyor.');
+
+  const sourceHandle = await fs.promises.open(source, 'r');
+  const destinationHandle = await fs.promises.open(destination, 'w');
+  try {
+    const header = Buffer.allocUnsafe(12);
+    header.writeUInt32LE(0x46546c67, 0);
+    header.writeUInt32LE(2, 4);
+    header.writeUInt32LE(totalLength, 8);
+    await destinationHandle.write(header, 0, header.length, 0);
+
+    let outPosition = 12;
+    for (const chunk of structure.chunks) {
+      const dataLength = chunk === structure.jsonChunk ? json.length : chunk.length;
+      const chunkHeader = Buffer.allocUnsafe(8);
+      chunkHeader.writeUInt32LE(dataLength, 0);
+      chunkHeader.writeUInt32LE(chunk.type, 4);
+      await destinationHandle.write(chunkHeader, 0, 8, outPosition);
+      outPosition += 8;
+
+      if (chunk === structure.jsonChunk) {
+        await destinationHandle.write(json, 0, json.length, outPosition);
+      } else {
+        await copyRange(sourceHandle, destinationHandle, chunk.dataOffset, chunk.length, outPosition);
+      }
+      outPosition += dataLength;
+    }
+  } finally {
+    await Promise.allSettled([sourceHandle.close(), destinationHandle.close()]);
   }
-  return output;
 }
 
-async function fileIsFresh(file, source) {
-  try {
-    const [a, b] = await Promise.all([fs.promises.stat(file), fs.promises.stat(source)]);
-    return a.size > 256 * 1024 && a.mtimeMs >= b.mtimeMs;
-  } catch (_) { return false; }
+async function atomicReplace(tempFile, destination) {
+  await fs.promises.rm(destination, { force: true });
+  await fs.promises.rename(tempFile, destination);
+}
+
+async function findSafePreviousCache(cacheRoot, map) {
+  for (const version of ['v5', 'v4']) {
+    const candidate = path.join(cacheRoot, `${map}.${version}.glb`);
+    if (await isSafeGlb(candidate)) return candidate;
+  }
+  return null;
+}
+
+async function findReusableRaw(cacheRoot, map) {
+  const direct = path.join(cacheRoot, `${map}.v3.glb`);
+  if (await isUsableRawGlb(direct)) return direct;
+
+  for (const version of ['v6', 'v5', 'v4', 'v3']) {
+    const exportDir = path.join(cacheRoot, `export-${version}`);
+    const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
+    if (!glbs.length) continue;
+    const chosen = await chooseExport(glbs, map);
+    if (chosen && await isUsableRawGlb(chosen)) return chosen;
+  }
+  return null;
 }
 
 function registerAsset(file) {
@@ -255,56 +433,92 @@ function registerAsset(file) {
   return `matchframe-pov://asset/${token}/${encodeURIComponent(path.basename(file))}`;
 }
 
+async function buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb) {
+  const tempFile = `${cachedGlb}.tmp-${process.pid}-${Date.now()}`;
+  await fs.promises.rm(tempFile, { force: true });
+
+  try {
+    // Fast path: old v4/v5 caches are already texture-free. Reuse them instantly instead
+    // of launching Source2Viewer again just because the cache version changed.
+    const safePrevious = await findSafePreviousCache(cacheRoot, map);
+    if (safePrevious) {
+      await fs.promises.copyFile(safePrevious, tempFile);
+      await atomicReplace(tempFile, cachedGlb);
+      return 'reused-safe-cache';
+    }
+
+    // Second fast path: if an older raw/export GLB exists, only rewrite its tiny JSON chunk.
+    // The huge BIN chunk is streamed in 8 MB pieces, so MatchFrame no longer allocates several
+    // copies of an Inferno GLB in RAM and no longer freezes/restarts the renderer while converting.
+    const rawPrevious = await findReusableRaw(cacheRoot, map);
+    if (rawPrevious) {
+      await sanitizeGeometryGlbFile(rawPrevious, tempFile);
+      await atomicReplace(tempFile, cachedGlb);
+      return 'converted-existing-cache';
+    }
+
+    // True first run only. Keep the CLI hidden and geometry-only; it is never invoked when any
+    // usable previous MatchFrame export exists.
+    const cli = await ensureVrf();
+    const exportDir = path.join(cacheRoot, `export-${CACHE_VERSION}`);
+    await fs.promises.rm(exportDir, { recursive: true, force: true });
+    await fs.promises.mkdir(exportDir, { recursive: true });
+    const internal = `maps/${map}.vmap_c`;
+
+    await execFileAsync(cli, [
+      '-i', mapVpk,
+      '-o', exportDir,
+      '-d',
+      '--vpk_filepath', internal,
+      '--gltf_export_format', 'glb',
+      '--threads', '1',
+      '--game', gameInfo
+    ], { timeout: 180000 });
+
+    const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
+    const chosen = await chooseExport(glbs, map);
+    if (!chosen || !(await isUsableRawGlb(chosen))) throw new Error('Haritanın kullanılabilir GLB çıktısı bulunamadı.');
+    await sanitizeGeometryGlbFile(chosen, tempFile);
+    await atomicReplace(tempFile, cachedGlb);
+    return 'fresh-geometry-export';
+  } finally {
+    await fs.promises.rm(tempFile, { force: true }).catch(() => {});
+  }
+}
+
 async function prepare(mapName) {
   const map = String(mapName || '').trim().toLowerCase();
   if (!/^[a-z0-9_]+$/.test(map)) throw new Error('Geçersiz map adı.');
   if (jobs.has(map)) return jobs.get(map);
+
   const job = (async () => {
     const gameRoot = findCs2GameRoot();
     if (!gameRoot) throw new Error('Yerel CS2 kurulumu bulunamadı.');
     const mapVpk = path.join(gameRoot, 'maps', `${map}.vpk`);
     if (!fs.existsSync(mapVpk)) throw new Error(`${map}.vpk bulunamadı.`);
+    const gameInfo = path.join(gameRoot, 'gameinfo.gi');
     const cacheRoot = path.join(app.getPath('userData'), 'offline-pov', map);
     await fs.promises.mkdir(cacheRoot, { recursive: true });
     const cachedGlb = path.join(cacheRoot, `${map}.${CACHE_VERSION}.glb`);
 
-    if (!(await fileIsFresh(cachedGlb, mapVpk))) {
-      const cli = await ensureVrf();
-      const exportDir = path.join(cacheRoot, `export-${CACHE_VERSION}`);
-      await fs.promises.rm(exportDir, { recursive: true, force: true });
-      await fs.promises.mkdir(exportDir, { recursive: true });
-      const internal = `maps/${map}.vmap_c`;
-
-      // Critical: do NOT export Source 2 materials/textures here. That path can stall in
-      // Source2Viewer and is wasted work because MatchFrame uses its own safe colours anyway.
-      await execFileAsync(cli, [
-        '-i', mapVpk,
-        '-o', exportDir,
-        '-d',
-        '--vpk_filepath', internal,
-        '--gltf_export_format', 'glb',
-        '--threads', '1'
-      ], { timeout: 180000 });
-
-      const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
-      const chosen = await chooseExport(glbs, map);
-      if (!chosen) throw new Error('Haritanın GLB çıktısı bulunamadı.');
-      const safe = sanitizeGeometryGlb(await fs.promises.readFile(chosen));
-      await fs.promises.writeFile(cachedGlb, safe);
-      const stat = await fs.promises.stat(cachedGlb);
-      if (stat.size <= 256 * 1024) throw new Error('POV GLB çıktısı eksik görünüyor.');
+    let cacheSource = 'existing-v6';
+    if (!(await isSafeGlb(cachedGlb))) {
+      cacheSource = await buildSafeCache(cacheRoot, map, mapVpk, gameInfo, cachedGlb);
     }
+    if (!(await isSafeGlb(cachedGlb))) throw new Error('POV cache oluşturuldu fakat doğrulanamadı.');
 
     return {
       ok: true,
       map,
       url: registerAsset(cachedGlb),
       sourceScale: 0.0254,
-      renderer: `Source 2 Viewer ${VRF_VERSION} geometry-only safe-colour export`,
+      renderer: `Source 2 Viewer ${VRF_VERSION} cached geometry / streamed safe-colour conversion`,
       cacheVersion: CACHE_VERSION,
+      cacheSource,
       cs2RunningRequired: false
     };
   })();
+
   jobs.set(map, job);
   try { return await job; } finally { jobs.delete(map); }
 }
@@ -316,10 +530,11 @@ function installProtocol(protocol) {
       const token = url.pathname.split('/').filter(Boolean)[0];
       const file = served.get(token);
       if (!file || !fs.existsSync(file)) return new Response('Not found', { status: 404 });
+
       const response = await net.fetch(pathToFileURL(file).href);
       if (response.ok) return response;
       const bytes = await fs.promises.readFile(file);
-      return new Response(bytes, { headers: { 'Content-Type': 'model/gltf-binary', 'Cache-Control': 'no-store' } });
+      return new Response(bytes, { headers: { 'Content-Type': 'model/gltf-binary' } });
     } catch (error) {
       return new Response(String(error?.message || error), { status: 500 });
     }
