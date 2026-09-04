@@ -6,6 +6,7 @@ function safeEvent(file, name, player = [], other = []) {
 }
 
 function finite(value) {
+  if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -53,17 +54,13 @@ function buildCameraTracks(data) {
       track = { steamid, name: String(nameRaw ?? ''), ticks: [], values: [] };
       tracks.set(steamid, track);
     }
-    const eyePitch = finite(source.pitch) ?? 0;
-    const eyeYaw = finite(source.yaw) ?? 0;
-    const cmdPitch = finite(source.usercmd_viewangle_x);
-    const cmdYaw = finite(source.usercmd_viewangle_y);
     track.ticks.push(tick);
     track.values.push(
       finite(source.X) ?? 0,
       finite(source.Y) ?? 0,
       finite(source.Z) ?? 0,
-      cmdPitch ?? eyePitch,
-      cmdYaw ?? eyeYaw,
+      finite(source.pitch) ?? 0,
+      finite(source.yaw) ?? 0,
       finite(source.fov) ?? 90,
       finite(source.duck_amount) ?? 0
     );
@@ -71,14 +68,12 @@ function buildCameraTracks(data) {
 
   if (Array.isArray(data)) {
     for (const row of data) push(row.steamid, row.name, row.tick, row);
-  } else if (data && Array.isArray(data.tick)) {
+  } else if (data && data.tick && typeof data.tick.length === 'number') {
     const count = data.tick.length;
     for (let i = 0; i < count; i++) {
       push(data.steamid?.[i], data.name?.[i], data.tick[i], {
         X: data.X?.[i], Y: data.Y?.[i], Z: data.Z?.[i],
         pitch: data.pitch?.[i], yaw: data.yaw?.[i],
-        usercmd_viewangle_x: data.usercmd_viewangle_x?.[i],
-        usercmd_viewangle_y: data.usercmd_viewangle_y?.[i],
         fov: data.fov?.[i], duck_amount: data.duck_amount?.[i]
       });
     }
@@ -202,16 +197,13 @@ parentPort.on('message', ({ file }) => {
     let cameraTracks = [];
     let cameraError = null;
     try {
-      const exact = parseTicks(file, [
-        'X','Y','Z','pitch','yaw','usercmd_viewangle_x','usercmd_viewangle_y','fov','duck_amount'
-      ], null, true);
+      // Parse every demo tick for the replicated eye position/angles. This avoids the old 8-16
+      // tick sampling error in POV while remaining compatible with demos whose usercmd delta data
+      // is unavailable in current parser builds.
+      const exact = parseTicks(file, ['X','Y','Z','pitch','yaw','fov','duck_amount'], null, true);
       cameraTracks = buildCameraTracks(exact);
     } catch (error) {
       cameraError = error?.message || String(error);
-      try {
-        const exactFallback = parseTicks(file, ['X','Y','Z','pitch','yaw','fov','duck_amount'], null, true);
-        cameraTracks = buildCameraTracks(exactFallback);
-      } catch (_) {}
     }
 
     const tickRate = inferTickRate(roundStarts);
