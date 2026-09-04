@@ -37,6 +37,13 @@
     return Math.min(nextPlant, defuse, explosion);
   }
 
+  function dropEndTick(drop) {
+    const pickup = bombIndex.pickups.find((item) => item.tick > drop.tick)?.tick ?? Infinity;
+    const plant = bombIndex.plants.find((item) => item.tick > drop.tick)?.tick ?? Infinity;
+    const nextDrop = bombIndex.drops.find((item) => item.tick > drop.tick)?.tick ?? Infinity;
+    return Math.min(pickup, plant, nextDrop);
+  }
+
   function drawC4Symbol(x, y, pulse = 1) {
     ctx.save();
     ctx.translate(x, y);
@@ -86,6 +93,34 @@
     }
   }
 
+  function drawDroppedC4() {
+    if (viewMode !== 'tactical' || !demo || !window.matchframeRadarFast) return;
+    const pulse = .5 + .5 * Math.sin(performance.now() / 170);
+    for (const drop of bombIndex.drops) {
+      const end = dropEndTick(drop);
+      if (currentTick < drop.tick || currentTick >= end) continue;
+      const point = window.matchframeRadarFast.worldToScreen(drop.position.X, drop.position.Y);
+      if (!point) continue;
+      const [x, y] = point;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = 'rgba(255,118,96,.22)';
+      ctx.strokeStyle = 'rgba(255,139,119,.95)';
+      ctx.lineWidth = 1.5;
+      const size = 7 + pulse;
+      ctx.fillRect(-size, -size, size * 2, size * 2);
+      ctx.strokeRect(-size, -size, size * 2, size * 2);
+      ctx.restore();
+      ctx.save();
+      ctx.font = '8px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,191,180,.96)';
+      ctx.fillText('C4 YERDE', x, y - 14);
+      ctx.restore();
+    }
+  }
+
   function drawPlantedC4() {
     if (viewMode !== 'tactical' || !demo || !window.matchframeRadarFast) return;
     const viewport = window.matchframeRadarFast.viewport();
@@ -113,6 +148,7 @@
   drawCurrentFrame = function() {
     previousDraw();
     drawC4Carrier();
+    drawDroppedC4();
     drawPlantedC4();
   };
 })();
