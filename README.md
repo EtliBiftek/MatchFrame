@@ -37,6 +37,10 @@ npm run dist
 
 Every push to `main` is built on GitHub Actions. The workflow publishes both the portable EXE and installer EXE into a unique GitHub Release.
 
+## Current build
+
+The first Windows build pipeline is enabled. Release builds are tagged automatically as `v0.1.0-build.N`.
+
 ## Status
 
 This is the first functional development build. The built-in renderer currently focuses on match metadata, player selection and timeline control; full reconstructed 2D/3D world rendering and deep automatic coaching are next milestones.
