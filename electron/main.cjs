@@ -24,6 +24,7 @@ const RADAR_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 const VRF_VERSION = '20.0';
 const VRF_URL = `https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/${VRF_VERSION}/cli-windows-x64.zip`;
 const VRF_SHA256 = 'd32ab327b8bbb42a2528866afb03bb582bdb779d0005488da32b90292afd3ff5';
+const POV_CACHE_VERSION = 'v2';
 const VOICE_TOOL_VERSION = 'v3.1.6';
 const VOICE_TOOL_URL = `https://github.com/akiver/csgo-voice-extractor/releases/download/${VOICE_TOOL_VERSION}/win32-x64.zip`;
 const VOICE_TOOL_SHA256 = '1f5ad987e6aa0e207268992a169f87a6e78c64561353655e424676ee7bfdcb5b';
@@ -295,28 +296,39 @@ async function prepareOfflinePov(mapName) {
   if (povJobs.has(map)) return povJobs.get(map);
   const job = (async () => {
     const gameRoot = findCs2GameRoot();
-    if (!gameRoot) throw new Error('Yerel CS2 kurulumu bulunamadı. Offline POV, CS2’yi açmaz ama map dosyalarını yerel kurulumdan okur.');
+    if (!gameRoot) throw new Error('Yerel CS2 kurulumu bulunamadı. Offline POV map dosyalarını yerel kurulumdan okur.');
     const mapVpk = path.join(gameRoot, 'maps', `${map}.vpk`);
     if (!fs.existsSync(mapVpk)) throw new Error(`${map}.vpk yerel CS2 kurulumunda bulunamadı.`);
     const gameInfo = path.join(gameRoot, 'gameinfo.gi');
     const cacheRoot = path.join(app.getPath('userData'), 'offline-pov', map);
     await fs.promises.mkdir(cacheRoot, { recursive: true });
-    const cachedGlb = path.join(cacheRoot, `${map}.glb`);
+    // Versioned cache filename intentionally invalidates old GLBs that were exported without
+    // glTF texture adaptation and could render as an all-black scene.
+    const cachedGlb = path.join(cacheRoot, `${map}.${POV_CACHE_VERSION}.glb`);
     let validCache = false;
     try {
       const [glbStat, vpkStat] = await Promise.all([fs.promises.stat(cachedGlb), fs.promises.stat(mapVpk)]);
-      validCache = glbStat.size > 1024 && glbStat.mtimeMs >= vpkStat.mtimeMs;
+      validCache = glbStat.size > 256 * 1024 && glbStat.mtimeMs >= vpkStat.mtimeMs;
     } catch (_) {}
 
     if (!validCache) {
       const cli = await ensureTool({ name: 'source2viewer', version: VRF_VERSION, url: VRF_URL, sha256: VRF_SHA256, exeName: 'Source2Viewer-CLI.exe' });
-      const exportDir = path.join(cacheRoot, 'export');
+      const exportDir = path.join(cacheRoot, `export-${POV_CACHE_VERSION}`);
       await fs.promises.rm(exportDir, { recursive: true, force: true });
       await fs.promises.mkdir(exportDir, { recursive: true });
       const internal = `maps/${map}.vmap_c`;
       let exported = null;
       try {
-        await execFileAsync(cli, ['-i', mapVpk, '-o', exportDir, '-d', '--vpk_filepath', internal, '--gltf_export_format', 'glb', '--gltf_export_materials', '--game', gameInfo], { timeout: 15 * 60 * 1000 });
+        await execFileAsync(cli, [
+          '-i', mapVpk,
+          '-o', exportDir,
+          '-d',
+          '--vpk_filepath', internal,
+          '--gltf_export_format', 'glb',
+          '--gltf_export_materials',
+          '--gltf_textures_adapt',
+          '--game', gameInfo
+        ], { timeout: 15 * 60 * 1000 });
         const glbs = await listRecursive(exportDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
         if (glbs.length) {
           const stats = await Promise.all(glbs.map(async (file) => ({ file, size: (await fs.promises.stat(file)).size })));
@@ -325,16 +337,29 @@ async function prepareOfflinePov(mapName) {
       } catch (_) {}
 
       if (!exported) {
-        const rawDir = path.join(cacheRoot, 'raw');
+        const rawDir = path.join(cacheRoot, `raw-${POV_CACHE_VERSION}`);
         await fs.promises.rm(rawDir, { recursive: true, force: true });
         await fs.promises.mkdir(rawDir, { recursive: true });
         await execFileAsync(cli, ['-i', mapVpk, '-o', rawDir, '--vpk_filepath', internal], { timeout: 5 * 60 * 1000 });
         const compiled = await findRecursive(rawDir, (_full, name) => name.toLowerCase() === `${map}.vmap_c`);
         if (!compiled) throw new Error('Source 2 map resource VPK içinden çıkarılamadı.');
-        await execFileAsync(cli, ['-i', compiled, '-o', cachedGlb, '-d', '--gltf_export_format', 'glb', '--gltf_export_materials', '--game', gameInfo], { timeout: 15 * 60 * 1000 });
+        await execFileAsync(cli, [
+          '-i', compiled,
+          '-o', cachedGlb,
+          '-d',
+          '--gltf_export_format', 'glb',
+          '--gltf_export_materials',
+          '--gltf_textures_adapt',
+          '--game', gameInfo
+        ], { timeout: 15 * 60 * 1000 });
         exported = cachedGlb;
       }
       if (exported !== cachedGlb) await fs.promises.copyFile(exported, cachedGlb);
+      const exportedStat = await fs.promises.stat(cachedGlb);
+      if (exportedStat.size <= 256 * 1024) {
+        await fs.promises.rm(cachedGlb, { force: true });
+        throw new Error('POV GLB exportu eksik görünüyor; cache oluşturulmadı.');
+      }
     }
 
     return {
@@ -343,6 +368,7 @@ async function prepareOfflinePov(mapName) {
       url: registerServedFile(cachedGlb, 'model/gltf-binary'),
       sourceScale: 0.0254,
       renderer: `Source 2 Viewer ${VRF_VERSION} export`,
+      cacheVersion: POV_CACHE_VERSION,
       cs2RunningRequired: false
     };
   })();
