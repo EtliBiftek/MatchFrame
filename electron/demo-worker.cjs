@@ -42,6 +42,57 @@ function buildFrames(rows) {
   return [...byTick.values()].sort((a, b) => a.tick - b.tick);
 }
 
+function buildCameraTracks(data) {
+  const tracks = new Map();
+  const push = (steamidRaw, nameRaw, tickRaw, source) => {
+    const steamid = String(steamidRaw ?? '');
+    const tick = finite(tickRaw);
+    if (!steamid || tick === null) return;
+    let track = tracks.get(steamid);
+    if (!track) {
+      track = { steamid, name: String(nameRaw ?? ''), ticks: [], values: [] };
+      tracks.set(steamid, track);
+    }
+    const eyePitch = finite(source.pitch) ?? 0;
+    const eyeYaw = finite(source.yaw) ?? 0;
+    const cmdPitch = finite(source.usercmd_viewangle_x);
+    const cmdYaw = finite(source.usercmd_viewangle_y);
+    track.ticks.push(tick);
+    track.values.push(
+      finite(source.X) ?? 0,
+      finite(source.Y) ?? 0,
+      finite(source.Z) ?? 0,
+      cmdPitch ?? eyePitch,
+      cmdYaw ?? eyeYaw,
+      finite(source.fov) ?? 90,
+      finite(source.duck_amount) ?? 0
+    );
+  };
+
+  if (Array.isArray(data)) {
+    for (const row of data) push(row.steamid, row.name, row.tick, row);
+  } else if (data && Array.isArray(data.tick)) {
+    const count = data.tick.length;
+    for (let i = 0; i < count; i++) {
+      push(data.steamid?.[i], data.name?.[i], data.tick[i], {
+        X: data.X?.[i], Y: data.Y?.[i], Z: data.Z?.[i],
+        pitch: data.pitch?.[i], yaw: data.yaw?.[i],
+        usercmd_viewangle_x: data.usercmd_viewangle_x?.[i],
+        usercmd_viewangle_y: data.usercmd_viewangle_y?.[i],
+        fov: data.fov?.[i], duck_amount: data.duck_amount?.[i]
+      });
+    }
+  }
+
+  return [...tracks.values()].map((track) => ({
+    steamid: track.steamid,
+    name: track.name,
+    ticks: Int32Array.from(track.ticks),
+    values: Float32Array.from(track.values),
+    stride: 7
+  }));
+}
+
 function boundsFromFrames(frames) {
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (const frame of frames) {
@@ -92,7 +143,6 @@ function buildRoundMeta(roundStarts, roundEnds, maxTick) {
     .sort((a, b) => a.tick - b.tick);
 
   starts = starts.filter((item, index) => index === 0 || item.tick - starts[index - 1].tick > 16);
-
   const ends = [...roundEnds].map(eventTick).filter((x) => x > 0).sort((a, b) => a - b);
   if (!starts.length && ends.length) {
     let previous = 0;
@@ -149,6 +199,21 @@ parentPort.on('message', ({ file }) => {
       }
     }
 
+    let cameraTracks = [];
+    let cameraError = null;
+    try {
+      const exact = parseTicks(file, [
+        'X','Y','Z','pitch','yaw','usercmd_viewangle_x','usercmd_viewangle_y','fov','duck_amount'
+      ], null, true);
+      cameraTracks = buildCameraTracks(exact);
+    } catch (error) {
+      cameraError = error?.message || String(error);
+      try {
+        const exactFallback = parseTicks(file, ['X','Y','Z','pitch','yaw','fov','duck_amount'], null, true);
+        cameraTracks = buildCameraTracks(exactFallback);
+      } catch (_) {}
+    }
+
     const tickRate = inferTickRate(roundStarts);
     const roundMeta = buildRoundMeta(roundStarts, roundEnds, maxTick);
 
@@ -169,6 +234,8 @@ parentPort.on('message', ({ file }) => {
         durationSeconds: maxTick / tickRate,
         sampleStep,
         frames,
+        cameraTracks,
+        cameraError,
         bounds: boundsFromFrames(frames),
         viewerError
       }
