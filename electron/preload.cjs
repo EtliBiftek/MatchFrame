@@ -7,8 +7,7 @@ contextBridge.exposeInMainWorld('matchframe', {
     close: () => ipcRenderer.invoke('window:close')
   },
   demo: {
-    open: () => ipcRenderer.invoke('demo:open'),
-    launch: (path) => ipcRenderer.invoke('demo:launch', path)
+    open: () => ipcRenderer.invoke('demo:open')
   },
   radar: {
     load: (mapName) => ipcRenderer.invoke('radar:load', mapName)
