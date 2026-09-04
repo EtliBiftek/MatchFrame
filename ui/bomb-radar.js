@@ -57,6 +57,35 @@
     ctx.restore();
   }
 
+  function drawC4Carrier() {
+    if (viewMode !== 'tactical' || !demo || !window.matchframeRadarFast) return;
+    const frame = nearestFrame(currentTick);
+    if (!frame) return;
+    const pulse = .5 + .5 * Math.sin(performance.now() / 130);
+    for (const player of frame.players || []) {
+      if (!player.has_c4 || !player.is_alive || !Number.isFinite(player.X) || !Number.isFinite(player.Y)) continue;
+      const point = window.matchframeRadarFast.worldToScreen(player.X, player.Y);
+      if (!point) continue;
+      const [x, y] = point;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = 'rgba(247,95,78,.18)';
+      ctx.strokeStyle = 'rgba(255,128,108,.98)';
+      ctx.lineWidth = 2;
+      const size = 9 + pulse * 1.5;
+      ctx.fillRect(-size, -size, size * 2, size * 2);
+      ctx.strokeRect(-size, -size, size * 2, size * 2);
+      ctx.restore();
+      ctx.save();
+      ctx.font = 'bold 8px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,190,178,.98)';
+      ctx.fillText('C4', x, y - 15);
+      ctx.restore();
+    }
+  }
+
   function drawPlantedC4() {
     if (viewMode !== 'tactical' || !demo || !window.matchframeRadarFast) return;
     const viewport = window.matchframeRadarFast.viewport();
@@ -83,6 +112,7 @@
   const previousDraw = drawCurrentFrame;
   drawCurrentFrame = function() {
     previousDraw();
+    drawC4Carrier();
     drawPlantedC4();
   };
 })();
