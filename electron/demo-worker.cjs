@@ -5,8 +5,42 @@ function reportProgress(percent, stage) {
   parentPort.postMessage({ type: 'progress', percent: Math.max(0, Math.min(100, Math.round(percent))), stage });
 }
 
+/*
+ * Event ayrıştırma: hatalar sessizce yutulmaz.
+ * Her event için { ok, count } veya { ok:false, error } kaydı tutulur, böylece
+ * "oyuncu hiç hasar vermedi" ile "hasar eventleri parse edilemedi" ayrılır.
+ */
+const eventStatus = Object.create(null);
+
 function safeEvent(file, name, player = [], other = []) {
-  try { return parseEvent(file, name, player, other); } catch (_) { return []; }
+  try {
+    const rows = parseEvent(file, name, player, other);
+    eventStatus[name] = { ok: true, count: Array.isArray(rows) ? rows.length : 0 };
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    eventStatus[name] = { ok: false, error: error?.message || String(error) };
+    return [];
+  }
+}
+
+/*
+ * Parser sürümüne göre alan adları değişebiliyor. Genişletilmiş alan listesi
+ * hata verirse daha dar bir varyanta düşülür; event tamamen kaybolmaz.
+ */
+function safeEventVariants(file, name, variants) {
+  let lastError = null;
+  for (let index = 0; index < variants.length; index += 1) {
+    const [player, other] = variants[index];
+    try {
+      const rows = parseEvent(file, name, player, other);
+      eventStatus[name] = { ok: true, count: Array.isArray(rows) ? rows.length : 0, variant: index };
+      return Array.isArray(rows) ? rows : [];
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  eventStatus[name] = { ok: false, error: lastError?.message || String(lastError) };
+  return [];
 }
 
 function finite(value) {
@@ -235,9 +269,28 @@ parentPort.on('message', ({ file }) => {
     const rawPlayers = parsePlayerInfo(file);
 
     reportProgress(12, 'Round ve kill eventleri ayrıştırılıyor…');
-    const roundStarts = safeEvent(file, 'round_start', [], ['round_start_time', 'total_rounds_played', 'is_warmup_period']);
-    const roundEnds = safeEvent(file, 'round_end', [], ['total_rounds_played', 'is_warmup_period']);
-    const deaths = safeEvent(file, 'player_death', ['player_steamid', 'player_name'], ['total_rounds_played']);
+    const roundStarts = safeEventVariants(file, 'round_start', [
+      [[], ['round_start_time', 'total_rounds_played', 'is_warmup_period']],
+      [[], ['total_rounds_played', 'is_warmup_period']],
+      [[], []]
+    ]);
+    // winner/reason alanları Analysis ekranındaki round sonucu için gerekli.
+    const roundEnds = safeEventVariants(file, 'round_end', [
+      [[], ['winner', 'reason', 'total_rounds_played', 'is_warmup_period']],
+      [[], ['total_rounds_played', 'is_warmup_period']],
+      [[], []]
+    ]);
+    const deaths = safeEventVariants(file, 'player_death', [
+      [
+        ['player_steamid', 'player_name', 'attacker_steamid', 'attacker_name', 'assister_steamid', 'assister_name'],
+        ['weapon', 'headshot', 'penetrated', 'noscope', 'thrusmoke', 'attackerblind', 'attackerinair', 'assistedflash', 'total_rounds_played']
+      ],
+      [
+        ['player_steamid', 'player_name', 'attacker_steamid', 'attacker_name'],
+        ['weapon', 'headshot', 'assistedflash', 'total_rounds_played']
+      ],
+      [['player_steamid', 'player_name'], ['total_rounds_played']]
+    ]);
     reportProgress(18, 'C4 eventleri ayrıştırılıyor…');
     const bombPlayerProps = ['X', 'Y', 'Z', 'player_name', 'player_steamid'];
     const plants = safeEvent(file, 'bomb_planted', bombPlayerProps, ['total_rounds_played']);
@@ -245,6 +298,24 @@ parentPort.on('message', ({ file }) => {
     const explosions = safeEvent(file, 'bomb_exploded', bombPlayerProps, ['total_rounds_played']);
     const bombDrops = safeEvent(file, 'bomb_dropped', bombPlayerProps, ['total_rounds_played']);
     const bombPickups = safeEvent(file, 'bomb_pickup', bombPlayerProps, ['total_rounds_played']);
+
+    reportProgress(21, 'Hasar ve atış eventleri ayrıştırılıyor…');
+    // Aim / ADR metrikleri için: player_hurt, weapon_fire, bullet_impact
+    const damage = safeEventVariants(file, 'player_hurt', [
+      [
+        ['user_steamid', 'user_name', 'attacker_steamid', 'attacker_name'],
+        ['dmg_health', 'dmg_armor', 'hitgroup', 'weapon', 'user_X', 'user_Y', 'user_Z']
+      ],
+      [['user_steamid', 'attacker_steamid'], ['dmg_health', 'hitgroup', 'weapon']],
+      [['user_steamid'], ['dmg_health']]
+    ]);
+    const shots = safeEventVariants(file, 'weapon_fire', [
+      [['user_steamid', 'user_name'], ['weapon', 'silenced']],
+      [['user_steamid'], ['weapon']],
+      [['user_steamid'], []]
+    ]);
+    const impacts = safeEvent(file, 'bullet_impact', ['user_steamid', 'user_name'], ['X', 'Y', 'Z']);
+    const freezeEnds = safeEvent(file, 'round_freeze_end', [], ['total_rounds_played']);
 
     reportProgress(24, 'Utility eventleri ayrıştırılıyor…');
     const smokeStarts = safeEvent(file, 'smokegrenade_detonate', ['player_steamid', 'player_name'], []);
@@ -272,7 +343,8 @@ parentPort.on('message', ({ file }) => {
 
     const eventTicks = [
       ...roundStarts, ...roundEnds, ...deaths, ...plants, ...defuses, ...explosions, ...bombDrops, ...bombPickups,
-      ...smokeStarts, ...smokeEnds, ...infernoStarts, ...infernoEnds, ...heDetonates, ...flashDetonates, ...playerBlinds
+      ...smokeStarts, ...smokeEnds, ...infernoStarts, ...infernoEnds, ...heDetonates, ...flashDetonates, ...playerBlinds,
+      ...(eventStatus.player_hurt?.ok ? damage : []), ...(eventStatus.weapon_fire?.ok ? shots : [])
     ].map(eventTick).filter(Number.isFinite);
     let maxTick = eventTicks.length ? Math.max(...eventTicks) : 0;
 
@@ -324,7 +396,14 @@ parentPort.on('message', ({ file }) => {
         roundStarts,
         rounds: roundEnds,
         roundMeta,
+        roundEnds,
         deaths,
+        damage,
+        shots,
+        impacts,
+        freezeEnds,
+        blinds: playerBlinds,
+        eventStatus,
         plants,
         defuses,
         explosions,

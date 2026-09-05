@@ -1,0 +1,338 @@
+'use strict';
+
+/*
+ * Test fixture üreticisi.
+ *
+ * Gerçek .dem dosyaları repoya girmez; bunun yerine demo-worker.cjs çıktısıyla
+ * aynı şekle sahip küçük ve anonim JSON demolar üretilir.
+ */
+
+const TEAM_NUMBER = { T: 2, CT: 3 };
+
+function defaultPlayers() {
+  const names = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel', 'india', 'juliet'];
+  return names.map((name, index) => ({
+    name,
+    steamid: String(76561198000000001n + BigInt(index)),
+    side: index < 5 ? 'T' : 'CT'
+  }));
+}
+
+function makeDemo(options = {}) {
+  const tickRate = options.tickRate || 64;
+  const playerSpecs = options.players || defaultPlayers();
+  const players = playerSpecs.map((spec, index) => ({
+    name: spec.name || `player${index + 1}`,
+    steamid: String(spec.steamid || 76561198000000001n + BigInt(index)),
+    team_number: TEAM_NUMBER[spec.side] || 0,
+    team_name: spec.team_name || '',
+    _side: spec.side,
+    _sidesByRound: spec.sidesByRound || null,
+    _index: index
+  }));
+
+  const demo = {
+    header: {
+      map_name: options.map || 'de_mirage',
+      server_name: options.server || 'Test Server',
+      playback_ticks: 0,
+      playback_time: 0
+    },
+    file: options.file || 'C:/demos/fixture.dem',
+    players: players.map(({ _side, _sidesByRound, _index, ...rest }) => rest),
+    roundStarts: [],
+    rounds: [],
+    roundMeta: [],
+    deaths: [],
+    plants: [],
+    defuses: [],
+    explosions: [],
+    damage: options.omitDamage ? undefined : [],
+    shots: options.omitShots ? undefined : [],
+    blinds: options.omitBlinds ? undefined : [],
+    freezeEnds: [],
+    bomb: null,
+    utility: {
+      smokeStarts: [],
+      smokeEnds: [],
+      infernoStarts: [],
+      infernoEnds: [],
+      heDetonates: [],
+      flashDetonates: [],
+      playerBlinds: [],
+      decoyStarts: [],
+      decoyEnds: []
+    },
+    frames: [],
+    maxTick: 0,
+    tickRate,
+    durationSeconds: 0,
+    sampleStep: 8,
+    bounds: { minX: -2000, maxX: 2000, minY: -2000, maxY: 2000 },
+    cameraTracks: [],
+    eventStatus: options.eventStatus || {}
+  };
+
+  const api = {
+    demo,
+    players,
+    tickRate,
+
+    sideOf(player, roundNumber) {
+      const overrides = player._sidesByRound;
+      if (overrides && overrides[roundNumber]) return overrides[roundNumber];
+      return player._side;
+    },
+
+    addRound(config = {}) {
+      const number = demo.roundMeta.length + 1;
+      const startTick = config.startTick != null ? config.startTick : (demo.roundMeta.at(-1)?.endTick ?? 0) + 64;
+      const endTick = config.endTick != null ? config.endTick : startTick + (config.length ?? 1600);
+      demo.roundMeta.push({ number, startTick, endTick });
+      demo.roundStarts.push({ tick: startTick, total_rounds_played: number - 1, is_warmup_period: false, round_start_time: number * 2 });
+      demo.maxTick = Math.max(demo.maxTick, endTick);
+      demo.rounds.push({ tick: endTick, total_rounds_played: number });
+      if (config.winner) {
+        const last = demo.rounds[demo.rounds.length - 1];
+        last.winner = TEAM_NUMBER[config.winner] || 0;
+        last.reason = config.reason != null ? config.reason : 0;
+      }
+      return number;
+    },
+
+    round(number) {
+      return demo.roundMeta.find((meta) => meta.number === number) || null;
+    },
+
+    actor(value) {
+      if (!value) return { steamid: '', name: '' };
+      if (typeof value === 'string') {
+        const player = players.find((candidate) => candidate.steamid === value);
+        return { steamid: value, name: player ? player.name : value };
+      }
+      return { steamid: value.steamid, name: value.name };
+    },
+
+    addKill(config) {
+      const attacker = api.actor(config.attacker);
+      const victim = api.actor(config.victim);
+      const assister = api.actor(config.assister);
+      demo.deaths.push({
+        tick: config.tick,
+        total_rounds_played: config.round != null ? config.round - 1 : undefined,
+        attacker_steamid: attacker.steamid,
+        attacker_name: attacker.name,
+        user_steamid: victim.steamid,
+        user_name: victim.name,
+        assister_steamid: assister.steamid || undefined,
+        assister_name: assister.name || undefined,
+        assistedflash: config.assistedflash ? true : undefined,
+        weapon: config.weapon || 'ak47',
+        headshot: config.headshot ? true : false,
+        penetrated: false,
+        noscope: false,
+        thrusmoke: false,
+        attackerblind: false,
+        attackerinair: false,
+        user_X: Number.isFinite(config.x) ? config.x : 100,
+        user_Y: Number.isFinite(config.y) ? config.y : 100,
+        user_Z: 0
+      });
+      return api;
+    },
+
+    addDamage(config) {
+      if (!demo.damage) return api;
+      const attacker = api.actor(config.attacker);
+      const victim = api.actor(config.victim);
+      demo.damage.push({
+        tick: config.tick,
+        attacker_steamid: attacker.steamid,
+        attacker_name: attacker.name,
+        user_steamid: victim.steamid,
+        user_name: victim.name,
+        weapon: config.weapon || 'ak47',
+        dmg_health: config.damage != null ? config.damage : 27,
+        dmg_armor: 0,
+        hitgroup: config.headshot ? 1 : 2,
+        user_X: 0,
+        user_Y: 0,
+        user_Z: 0
+      });
+      return api;
+    },
+
+    addShot(config) {
+      if (!demo.shots) return api;
+      const actor = api.actor(config.player || config.attacker);
+      demo.shots.push({
+        tick: config.tick,
+        user_steamid: actor.steamid,
+        user_name: actor.name,
+        weapon: config.weapon || 'ak47',
+        silenced: false
+      });
+      return api;
+    },
+
+    addPlant(config) {
+      const actor = api.actor(config.player);
+      const event = { tick: config.tick, user_steamid: actor.steamid, user_name: actor.name, user_X: 500, user_Y: 500, user_Z: 0 };
+      demo.plants.push(event);
+      return api;
+    },
+
+    addDefuse(config) {
+      const actor = api.actor(config.player);
+      demo.defuses.push({ tick: config.tick, user_steamid: actor.steamid, user_name: actor.name, user_X: 500, user_Y: 500, user_Z: 0 });
+      return api;
+    },
+
+    addExplosion(config = {}) {
+      demo.explosions.push({ tick: config.tick, user_X: 500, user_Y: 500, user_Z: 0 });
+      return api;
+    },
+
+    addUtility(config) {
+      const actor = api.actor(config.player);
+      const event = {
+        tick: config.tick,
+        user_steamid: actor.steamid,
+        user_name: actor.name,
+        user_X: config.x != null ? config.x : 0,
+        user_Y: config.y != null ? config.y : 0,
+        user_Z: 0
+      };
+      const map = {
+        smoke: 'smokeStarts',
+        smokeEnd: 'smokeEnds',
+        molotov: 'infernoStarts',
+        molotovEnd: 'infernoEnds',
+        he: 'heDetonates',
+        flash: 'flashDetonates',
+        decoy: 'decoyStarts',
+        decoyEnd: 'decoyEnds'
+      };
+      const key = map[config.kind];
+      if (key) demo.utility[key].push(event);
+      return api;
+    },
+
+    addBlind(config) {
+      if (!demo.blinds) {
+        demo.utility.playerBlinds.push({
+          tick: config.tick,
+          user_steamid: api.actor(config.victim).steamid,
+          user_name: api.actor(config.victim).name,
+          blind_duration: config.duration != null ? config.duration : 2.1
+        });
+        return api;
+      }
+      demo.blinds.push({
+        tick: config.tick,
+        attacker_steamid: api.actor(config.attacker).steamid,
+        attacker_name: api.actor(config.attacker).name,
+        user_steamid: api.actor(config.victim).steamid,
+        user_name: api.actor(config.victim).name,
+        blind_duration: config.duration != null ? config.duration : 2.1
+      });
+      return api;
+    },
+
+    /* Sadece round başlarında frame üretir; fixture dosyalarını küçük tutar. */
+    buildRoundStartFrames(perRound = 2, offset = 16) {
+      const frames = [];
+      for (const meta of demo.roundMeta) {
+        for (let i = 0; i < perRound; i++) {
+          const tick = meta.startTick + offset * (i + 1);
+          if (tick > meta.endTick) continue;
+          frames.push({
+            tick,
+            players: api.players.map((player, index) => ({
+              steamid: player.steamid,
+              name: player.name,
+              X: -800 + index * 160,
+              Y: -400 + (index % 3) * 120,
+              Z: 0,
+              pitch: 0,
+              yaw: (index * 37) % 360,
+              fov: 90,
+              duck_amount: 0,
+              in_crouch: false,
+              health: 100,
+              armor: 100,
+              is_alive: true,
+              team_num: TEAM_NUMBER[api.sideOf(player, meta.number)] || 0,
+              team_name: '',
+              team_clan_name: '',
+              player_color: '',
+              active_weapon_name: 'weapon_ak47',
+              active_weapon_ammo: 30,
+              total_ammo_left: 90,
+              flash_duration: 0,
+              inventory: [],
+              has_c4: false
+            }))
+          });
+        }
+      }
+      demo.frames = frames;
+      return api;
+    },
+
+    /* Tick state'ini (radar frame'leri) üretir. Taraf tespiti bu veriden yapılır. */
+    buildFrames(step = 8) {
+      const frames = [];
+      if (!demo.roundMeta.length) return api;
+      const lastTick = demo.maxTick;
+      for (let tick = 0; tick <= lastTick; tick += step) {
+        const meta = [...demo.roundMeta].reverse().find((round) => tick >= round.startTick) || demo.roundMeta[0];
+        const players = api.players.map((player, index) => ({
+          steamid: player.steamid,
+          name: player.name,
+          X: -800 + index * 160,
+          Y: -400 + (index % 3) * 120,
+          Z: 0,
+          pitch: 0,
+          yaw: (index * 37) % 360,
+          fov: 90,
+          duck_amount: 0,
+          in_crouch: false,
+          health: 100,
+          armor: 100,
+          is_alive: true,
+          team_num: TEAM_NUMBER[api.sideOf(player, meta.number)] || 0,
+          team_name: '',
+          team_clan_name: '',
+          player_color: '',
+          active_weapon_name: 'weapon_ak47',
+          active_weapon_ammo: 30,
+          total_ammo_left: 90,
+          flash_duration: 0,
+          inventory: [],
+          has_c4: false
+        }));
+        frames.push({ tick, players });
+      }
+      demo.frames = frames;
+      return api;
+    },
+
+    finalize() {
+      demo.durationSeconds = demo.maxTick / tickRate;
+      if (!demo.frames.length) api.buildFrames();
+      demo.bomb = {
+        plants: demo.plants,
+        defuses: demo.defuses,
+        explosions: demo.explosions,
+        drops: [],
+        pickups: []
+      };
+      return demo;
+    }
+  };
+
+  return api;
+}
+
+module.exports = { makeDemo, defaultPlayers, TEAM_NUMBER };

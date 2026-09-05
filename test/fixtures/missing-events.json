@@ -1,0 +1,463 @@
+{
+  "header": {
+    "map_name": "de_overpass",
+    "server_name": "Missing Events",
+    "playback_ticks": 0,
+    "playback_time": 0
+  },
+  "file": "C:/demos/missing-events.dem",
+  "players": [
+    {
+      "name": "alpha",
+      "steamid": "76561198000000001",
+      "team_number": 2,
+      "team_name": ""
+    },
+    {
+      "name": "bravo",
+      "steamid": "76561198000000002",
+      "team_number": 2,
+      "team_name": ""
+    },
+    {
+      "name": "charlie",
+      "steamid": "76561198000000003",
+      "team_number": 2,
+      "team_name": ""
+    },
+    {
+      "name": "delta",
+      "steamid": "76561198000000004",
+      "team_number": 2,
+      "team_name": ""
+    },
+    {
+      "name": "echo",
+      "steamid": "76561198000000005",
+      "team_number": 2,
+      "team_name": ""
+    },
+    {
+      "name": "foxtrot",
+      "steamid": "76561198000000006",
+      "team_number": 3,
+      "team_name": ""
+    },
+    {
+      "name": "golf",
+      "steamid": "76561198000000007",
+      "team_number": 3,
+      "team_name": ""
+    },
+    {
+      "name": "hotel",
+      "steamid": "76561198000000008",
+      "team_number": 3,
+      "team_name": ""
+    },
+    {
+      "name": "india",
+      "steamid": "76561198000000009",
+      "team_number": 3,
+      "team_name": ""
+    },
+    {
+      "name": "juliet",
+      "steamid": "76561198000000010",
+      "team_number": 3,
+      "team_name": ""
+    }
+  ],
+  "roundStarts": [
+    {
+      "tick": 1000,
+      "total_rounds_played": 0,
+      "is_warmup_period": false,
+      "round_start_time": 2
+    }
+  ],
+  "rounds": [
+    {
+      "tick": 3000,
+      "total_rounds_played": 1,
+      "winner": 2,
+      "reason": 9
+    }
+  ],
+  "roundMeta": [
+    {
+      "number": 1,
+      "startTick": 1000,
+      "endTick": 3000
+    }
+  ],
+  "deaths": [
+    {
+      "tick": 1200,
+      "attacker_steamid": "76561198000000001",
+      "attacker_name": "alpha",
+      "user_steamid": "76561198000000006",
+      "user_name": "foxtrot",
+      "weapon": "ak47",
+      "headshot": true,
+      "penetrated": false,
+      "noscope": false,
+      "thrusmoke": false,
+      "attackerblind": false,
+      "attackerinair": false,
+      "user_X": 100,
+      "user_Y": 100,
+      "user_Z": 0
+    },
+    {
+      "tick": 1400,
+      "attacker_steamid": "76561198000000001",
+      "attacker_name": "alpha",
+      "user_steamid": "76561198000000007",
+      "user_name": "golf",
+      "weapon": "ak47",
+      "headshot": false,
+      "penetrated": false,
+      "noscope": false,
+      "thrusmoke": false,
+      "attackerblind": false,
+      "attackerinair": false,
+      "user_X": 100,
+      "user_Y": 100,
+      "user_Z": 0
+    }
+  ],
+  "plants": [
+    {
+      "tick": 1600,
+      "user_steamid": "76561198000000002",
+      "user_name": "bravo",
+      "user_X": 500,
+      "user_Y": 500,
+      "user_Z": 0
+    }
+  ],
+  "defuses": [],
+  "explosions": [
+    {
+      "tick": 2400,
+      "user_X": 500,
+      "user_Y": 500,
+      "user_Z": 0
+    }
+  ],
+  "blinds": [],
+  "freezeEnds": [],
+  "bomb": {
+    "plants": [
+      {
+        "tick": 1600,
+        "user_steamid": "76561198000000002",
+        "user_name": "bravo",
+        "user_X": 500,
+        "user_Y": 500,
+        "user_Z": 0
+      }
+    ],
+    "defuses": [],
+    "explosions": [
+      {
+        "tick": 2400,
+        "user_X": 500,
+        "user_Y": 500,
+        "user_Z": 0
+      }
+    ],
+    "drops": [],
+    "pickups": []
+  },
+  "utility": {
+    "smokeStarts": [],
+    "smokeEnds": [],
+    "infernoStarts": [],
+    "infernoEnds": [],
+    "heDetonates": [],
+    "flashDetonates": [],
+    "playerBlinds": [],
+    "decoyStarts": [],
+    "decoyEnds": []
+  },
+  "frames": [
+    {
+      "tick": 1016,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 37,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 74,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 111,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 148,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 185,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000007",
+          "name": "golf",
+          "X": 160,
+          "Y": -400,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 222,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000008",
+          "name": "hotel",
+          "X": 320,
+          "Y": -280,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 259,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000009",
+          "name": "india",
+          "X": 480,
+          "Y": -160,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 296,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000010",
+          "name": "juliet",
+          "X": 640,
+          "Y": -400,
+          "Z": 0,
+          "pitch": 0,
+          "yaw": 333,
+          "fov": 90,
+          "duck_amount": 0,
+          "in_crouch": false,
+          "health": 100,
+          "armor": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "team_name": "",
+          "team_clan_name": "",
+          "player_color": "",
+          "active_weapon_name": "weapon_ak47",
+          "active_weapon_ammo": 30,
+          "total_ammo_left": 90,
+          "flash_duration": 0,
+          "inventory": [],
+          "has_c4": false
+        }
+      ]
+    }
+  ],
+  "maxTick": 3000,
+  "tickRate": 64,
+  "durationSeconds": 46.875,
+  "sampleStep": 8,
+  "bounds": {
+    "minX": -2000,
+    "maxX": 2000,
+    "minY": -2000,
+    "maxY": 2000
+  },
+  "cameraTracks": [],
+  "eventStatus": {
+    "player_hurt": {
+      "ok": false,
+      "error": "player_hurt field dmg_health bulunamadı"
+    },
+    "weapon_fire": {
+      "ok": false,
+      "error": "weapon_fire parse hatası"
+    }
+  }
+}

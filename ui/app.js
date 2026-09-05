@@ -109,6 +109,8 @@ function loadDemo(result) {
   updateTimeLabel();
   setViewMode('tactical');
   drawCurrentFrame();
+  // Analiz modeli demo yüklendiğinde BİR KEZ kurulur (yeni sol panel ekranları).
+  window.MF?.store?.setDemo(demo);
   const frameCount = result.frames?.length || 0;
   $('viewerLabel').textContent = frameCount ? `${frameCount.toLocaleString('tr-TR')} replay frame` : 'Event-only demo';
   log(`Loaded ${map}: ${(result.players || []).length} players, ${frameCount} replay frames, ${formatClock(result.durationSeconds || 0)}`, 'ok');
@@ -168,6 +170,8 @@ function selectDefaultPlayer(players) {
 
 function selectPlayer(player, button) {
   selectedPlayer = player;
+  // Yeni sol panel ekranları replay seçimini aynı filtre üzerinden paylaşır.
+  window.MF?.filters?.setPlayerFromReplay(player?.steamid);
   if (selectedPlayerButton) selectedPlayerButton.classList.remove('active');
   selectedPlayerButton = button || null;
   if (button) button.classList.add('active');
@@ -301,6 +305,7 @@ async function seek(tick) {
   if (viewMode === 'pov') updatePovCamera();
   else drawCurrentFrame();
   syncVoice(true);
+  window.MF?.bus?.emit('replay:seek', { tick: currentTick });
 }
 
 $('timeline').oninput = (event) => seek(event.target.value);
@@ -592,6 +597,52 @@ function renderSuggestions() {
   });
   $('suggestions').classList.toggle('show', results.length > 0);
 }
+
+/*
+ * Yeni modüler ekranlar (Analysis / Aim / Utility) eski replay kodunu
+ * override etmez; yalnızca bu köprü üzerinden okur/yazar. Burada global
+ * fonksiyonlara canlı referans verilir, böylece enhance.js/radar.js
+ * override'ları otomatik olarak geçerli olur.
+ */
+window.MatchFrameBridge = {
+  getDemo: () => demo,
+  getCurrentTick: () => currentTick,
+  getSelectedPlayer: () => selectedPlayer,
+  getSelectedSteamId: () => String(selectedPlayer?.steamid || ''),
+  getViewMode: () => viewMode,
+  isPlaying: () => playing,
+  tickRate,
+  seek: (tick) => seek(tick),
+  redraw: () => {
+    if (!demo) return;
+    if (viewMode === 'pov') updatePovCamera();
+    else drawCurrentFrame();
+  },
+  resizePov: () => {
+    if (viewMode === 'pov') window.matchframePov?.resize();
+  },
+  pause: () => {
+    if (!playing) return;
+    playing = false;
+    $('pauseBtn').textContent = '▶';
+    syncVoice(true);
+  },
+  selectSteamId(steamId) {
+    const value = String(steamId || '');
+    if (!value || !demo) return false;
+    if (value === String(selectedPlayer?.steamid || '')) return true;
+    const player = (demo.players || []).find((item) => String(item.steamid || '') === value);
+    if (!player) return false;
+    const rows = [...document.querySelectorAll('.player')];
+    const row = rows.find((element) => String(element.dataset?.steamid || '') === value)
+      || rows.find((element) => element.querySelector('.pmeta')?.textContent === value)
+      || null;
+    selectPlayer(player, row);
+    return true;
+  },
+  openDemo: () => $('openBtn')?.click(),
+  log
+};
 
 refreshCore();
 setInterval(refreshCore, 7000);

@@ -1,12 +1,30 @@
 <!doctype html>
+<!--
+  Geliştirme önizlemesi — Electron gerektirmez.
+
+  Amaç: sol panel ekranlarını (Analysis / Aim / Utility) gerçek .dem dosyası
+  olmadan fixture veriyle denemek. ui/ içindeki dosyalar değiştirilmez;
+  yalnızca window.matchframe IPC katmanı taklit edilir.
+
+  Çalıştırma: npm run preview  →  /dev/preview.html
+-->
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: matchframe: https://raw.githubusercontent.com; media-src 'self' blob: file: matchframe:; connect-src 'self' matchframe: matchframe-pov:; style-src 'self' 'unsafe-inline'; script-src 'self'" />
-  <title>MatchFrame</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="views.css" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'" />
+  <title>MatchFrame — Geliştirme Önizlemesi</title>
+  <link rel="stylesheet" href="../ui/styles.css" />
+  <link rel="stylesheet" href="../ui/views.css" />
+  <style>
+    .preview-banner {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin: 0 0 12px; padding: 8px 11px; border: 1px solid rgba(122, 155, 184, .32);
+      border-radius: 7px; background: rgba(28, 34, 40, .6); font-size: 10px; color: var(--muted);
+    }
+    .preview-banner strong { color: var(--fg); font-size: 10px; }
+    .preview-actions { display: flex; gap: 6px; margin-left: auto; }
+  </style>
 </head>
 <body>
   <header class="titlebar">
@@ -37,7 +55,7 @@
     <main class="workspace">
       <section class="workspace-head">
         <div class="head-copy">
-          <div class="eyebrow">CS2 DEMO WORKSPACE</div>
+          <div class="eyebrow">CS2 DEMO WORKSPACE · PREVIEW</div>
           <h1 id="matchTitle">Bir demo seç</h1>
           <p id="matchSubtitle">Demo analizi, radar replay ve gerçek map POV.</p>
         </div>
@@ -46,6 +64,16 @@
           <button id="openBtn" class="btn primary">Demo Aç</button>
         </div>
       </section>
+
+      <div class="preview-banner">
+        <strong>Geliştirme önizlemesi</strong>
+        <span id="previewInfo">Fixture veri yükleniyor…</span>
+        <div class="preview-actions">
+          <button id="loadBasic" class="btn secondary mini" type="button">basic-match</button>
+          <button id="loadMissing" class="btn secondary mini" type="button">missing-events</button>
+          <button id="loadClutch" class="btn secondary mini" type="button">clutch-1v3</button>
+        </div>
+      </div>
 
       <div class="view-stack" id="viewStack">
         <section class="view is-active" id="view-replay" data-view="replay">
@@ -73,7 +101,7 @@
                 <div id="povState" class="capture-state hidden">
                   <div class="capture-spinner"></div>
                   <strong id="povStateTitle">Offline POV hazırlanıyor</strong>
-                  <span id="povStateText">İlk kullanımda Source 2 map dosyası hazırlanabilir.</span>
+                  <span id="povStateText">Önizlemede Babylon/POV devre dışı.</span>
                 </div>
                 <div id="viewerWarning" class="viewer-warning hidden"></div>
                 <div id="povHud" class="pov-hud hidden">
@@ -134,36 +162,84 @@
     </div>
   </section>
 
-  <script src="../node_modules/babylonjs/babylon.js"></script>
-  <script src="../node_modules/babylonjs-loaders/babylonjs.loaders.min.js"></script>
-  <script src="state/bus.js"></script>
-  <script src="analysis/common.js"></script>
-  <script src="analysis/match-analysis.js"></script>
-  <script src="state/demo-store.js"></script>
-  <script src="state/filter-store.js"></script>
-  <script src="components/dom.js"></script>
-  <script src="components/stat-card.js"></script>
-  <script src="components/data-table.js"></script>
-  <script src="components/empty-state.js"></script>
-  <script src="components/filters.js"></script>
-  <script src="components/event-list.js"></script>
-  <script src="navigation.js"></script>
-  <script src="views/replay-view.js"></script>
-  <script src="views/analysis-view.js"></script>
-  <script src="views/aim-view.js"></script>
-  <script src="views/utility-view.js"></script>
-  <script src="pov.js"></script>
-  <script src="app.js"></script>
-  <script src="radar.js"></script>
-  <script src="enhance.js"></script>
-  <script src="seek-5.js"></script>
-  <script src="landing.js"></script>
-  <script src="runtime-v4.js"></script>
-  <script src="pov-stability.js"></script>
-  <script src="pov-world.js"></script>
-  <script src="radar-fast.js"></script>
-  <script src="radar-combat.js"></script>
-  <script src="equipment-panel.js"></script>
-  <script src="bomb-radar.js"></script>
+  <script>
+    /* Electron IPC katmanı taklidi */
+    window.matchframe = {
+      window: { minimize: () => {}, maximize: () => {}, close: () => {} },
+      demo: { open: async () => ({ canceled: true }), onProgress: () => () => {} },
+      radar: { load: async () => { throw new Error('önizlemede radar yok'); } },
+      pov: { prepare: async () => { throw new Error('önizlemede POV yok'); } },
+      voice: { prepare: async () => ({ available: false, tracks: [] }) },
+      core: {
+        status: async () => ({ ok: true, data: { version: 'preview' } }),
+        command: async () => ({ ok: true }),
+        request: async () => ({ ok: true, data: { running: false } })
+      }
+    };
+  </script>
+
+  <script src="../ui/state/bus.js"></script>
+  <script src="../ui/analysis/common.js"></script>
+  <script src="../ui/analysis/match-analysis.js"></script>
+  <script src="../ui/state/demo-store.js"></script>
+  <script src="../ui/state/filter-store.js"></script>
+  <script src="../ui/components/dom.js"></script>
+  <script src="../ui/components/stat-card.js"></script>
+  <script src="../ui/components/data-table.js"></script>
+  <script src="../ui/components/empty-state.js"></script>
+  <script src="../ui/components/filters.js"></script>
+  <script src="../ui/components/event-list.js"></script>
+  <script src="../ui/navigation.js"></script>
+  <script src="../ui/views/replay-view.js"></script>
+  <script src="../ui/views/analysis-view.js"></script>
+  <script src="../ui/views/aim-view.js"></script>
+  <script src="../ui/views/utility-view.js"></script>
+  <script src="../ui/app.js"></script>
+  <script src="../ui/radar.js"></script>
+  <script src="../ui/enhance.js"></script>
+  <script src="../ui/seek-5.js"></script>
+  <script src="../ui/landing.js"></script>
+  <script src="../ui/runtime-v4.js"></script>
+  <script src="../ui/radar-fast.js"></script>
+  <script src="../ui/radar-combat.js"></script>
+  <script src="../ui/equipment-panel.js"></script>
+  <script src="../ui/bomb-radar.js"></script>
+
+  <script>
+    (function () {
+      const info = document.getElementById('previewInfo');
+
+      async function loadFixture(name) {
+        const url = new URL(`../test/fixtures/${name}.json`, document.baseURI).href;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`${name}.json okunamadı`);
+        const demo = await response.json();
+        // landing.js loadDemo'yu geciktirerek çağırır; store güncellenene kadar bekle.
+        await new Promise((resolve) => {
+          const unsubscribe = window.MF.store.subscribe(() => {
+            unsubscribe();
+            resolve();
+          });
+          window.loadDemo(demo);
+          setTimeout(resolve, 3000);
+        });
+        const model = window.MF.store.getModel();
+        if (!model) throw new Error('analiz modeli kurulamadı');
+        const buildMs = window.MF.store.getState().buildMs;
+        info.textContent = `${name}.json · ${model.match.map} · ${model.match.roundsPlayed} round · ${model.playerOrder.length} oyuncu · model ${buildMs} ms`;
+      }
+
+      window.addEventListener('load', () => {
+        window.MF.navigation.init();
+        loadFixture('basic-match').catch((error) => {
+          info.textContent = `Fixture yüklenemedi: ${error.message}`;
+        });
+      });
+
+      document.getElementById('loadBasic').onclick = () => loadFixture('basic-match');
+      document.getElementById('loadMissing').onclick = () => loadFixture('missing-events');
+      document.getElementById('loadClutch').onclick = () => loadFixture('clutch-1v3');
+    })();
+  </script>
 </body>
 </html>
