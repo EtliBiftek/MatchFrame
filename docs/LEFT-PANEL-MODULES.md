@@ -18,6 +18,7 @@ ui/
   analysis/
     common.js                saf yardımcılar + event normalizasyonu
     match-analysis.js        buildMatchModel() — ortak analiz modeli
+    utility-analysis.js      buildUtilityModel() — utility ekranının hesap katmanı
   state/
     bus.js                   olay bus'ı
     demo-store.js            demo + analiz modeli cache'i
@@ -36,6 +37,7 @@ test/
   helpers/harness.mjs        jsdom entegrasyon harness'ı
   analysis-common.test.mjs
   match-analysis.test.mjs
+  utility-analysis.test.mjs
   demo-worker.test.cjs
   dom-navigation.test.mjs
 
@@ -53,14 +55,15 @@ dev/preview.html             fixture veriyle çalışan geliştirme önizlemesi
 | 1 | Navigasyon temeli | ✅ Tamam | Rail butonları `data-view` ile bağlı, view container sistemi, replay durumu korunuyor |
 | 2 | Ortak analiz modeli | ✅ Tamam | `buildMatchModel`, event normalizasyonu, availability, fixture testleri |
 | 3 | Analysis MVP | ✅ Tamam | Özet kartları, takım karşılaştırması, oyuncu tablosu, round listesi, replay'e git |
-| 4 | Parser genişletmesi | 🟡 Kısmen | `player_hurt`, `weapon_fire`, `bullet_impact`, `round_freeze_end`, `round_end.winner/reason`, `player_death` detay alanları eklendi. Eksik: `item_purchase`, `player_spawn/team/disconnect`, `begin_new_match` |
-| 5 | Utility MVP | ⬜ Sıradaki | `ui/analysis/utility-analysis.js` + radar overlay + flash/damage metrikleri |
+| 4 | Parser genişletmesi | ✅ Tamam | Yukarıdakilere ek olarak `item_purchase`, `player_spawn`, `player_team`, `player_disconnect`, `begin_new_match` ve `roundMeta[].freezeEndTick` eklendi |
+| 5 | Utility MVP | 🟡 Kısmen | Hesap katmanı (`ui/analysis/utility-analysis.js`) + 13 test hazır. Eksik: Utility ekranı UI'si, radar overlay, replay bağlantısı (Oturum B) |
 | 6 | Aim MVP | ⬜ Bekliyor | Utility bitmeden başlanmamalı |
 | 7 | Gelişmiş analiz | ⬜ Bekliyor | Heatmap, reaction-time tahmini, ekonomi, Ruby coaching |
 | 8 | Rust'a taşıma | ⬜ Bekliyor | Formüller doğrulandıktan sonra |
 
-Durum: Aşama 1-3 `main`'de, Windows build + release hattı çalışıyor
-(`v0.7.0-alpha.1-build.121`). Kalan 5 aşama için yol haritası `docs/ROADMAP-REMAINING.md`.
+Durum: Aşama 1-4 `main`'de, Windows build + release hattı çalışıyor
+(`v0.7.0-alpha.1-build.121`). Aşama 5'in hesap katmanı bu dalda tamamlandı (67 test yeşil);
+UI katmanı `docs/ROADMAP-REMAINING.md` → Oturum B'de gelecek.
 
 ## Bu turda yapılanlar
 
@@ -76,17 +79,34 @@ Durum: Aşama 1-3 `main`'de, Windows build + release hattı çalışıyor
 - **Testler**: 51 test (saf analiz, worker, jsdom entegrasyonu). `npm test`.
 - **Önizleme**: `npm run preview` → `dev/preview.html` (Electron gerekmez, fixture veriyle çalışır).
 
+## Bu turda yapılanlar (Aşama 4 kalanı + Utility hesap katmanı)
+
+- **Parser**: `item_purchase`, `player_spawn`, `player_team`, `player_disconnect`,
+  `begin_new_match` eventleri `safeEventVariants` ile eklendi; `buildRoundMeta` artık her round
+  için `freezeEndTick` üretiyor (round başına ilk `round_freeze_end`).
+- **Model**: `availability.purchases/spawns/teamChanges/disconnects`, `round.economy.{spend,buys}`,
+  `player.totals.economy`, `player.rounds[n].{spend,buys}`, `player.disconnected`;
+  `round.freezeEndTick` + `round.jumpTick` (replay freeze bitişine atlar, round süresi oradan ölçülür)
+  ve `round.rosterChanges`.
+- **Utility hesap katmanı**: `ui/analysis/utility-analysis.js` — `buildUtilityModel(model, {frames})`.
+  Atış sayımı (expire eventleri hariç), flash bağlama (attacker yoksa son `flashbang_detonate`),
+  düşman/takım ayrımı, boşa flash, smoke aktif süresi (expire yoksa `null`), molotov yanma + hasar,
+  HE hasarı/isabet, inventory (round başı + ölüm anı), aldatıcı hasar (ölüm sonrası düşen hasar),
+  round/takım dağılımı ve güven (confidence) sınıflandırması.
+- **Fixture**: `test/fixtures/utility-heavy.json` (3 round, 6 oyuncu, 15 utility atışı,
+  1 fallback körlük, 1 disconnect, ekonomi kayıtları, frame inventory).
+- **Testler**: 67 test (13 utility + 3 worker).
+
 ## Sonraki oturum için giriş noktaları
 
-1. **Utility MVP (Aşama 5)**
-   - `ui/analysis/utility-analysis.js`: smoke/flash/HE/molotov özetleri, flash assist,
-     kör edilen rakip/takım arkadaşı, ortalama körlük süresi, utility damage, smoke aktif süresi.
-   - `ui/views/utility-view.js`: özet kartları + event tablosu + radar overlay + replay'e git.
-   - Gerekirse parser'a `flashbang_detonate` konum alanları ve `inferno` kapsama alanı eklenir.
-2. **Parser tamamlama (Aşama 4 kalanı)**: `item_purchase`, `player_spawn`, `player_team`,
-   `player_disconnect`, `begin_new_match`.
-3. **Aim MVP (Aşama 6)**: yalnızca Utility bittikten sonra; `weapon_fire` + `bullet_impact`
-   + `player_hurt` eşleştirmesiyle crosshair açı hatası, potential reaction time, duel listesi.
+1. **Utility ekranı UI (Oturum B)**: `ui/views/utility-view.js` — özet kartları, oyuncu tablosu,
+   radar overlay (smoke/molotov/flash/he detonasyon noktaları), round filtresi ve
+   event satırından `MF.replay.jumpTo(tick, { steamId })` ile replay'e atlama.
+2. **Aim MVP (Aşama 6 / Oturum C)**: yalnızca Utility UI bittikten sonra; `weapon_fire` +
+   `bullet_impact` + `player_hurt` eşleştirmesiyle crosshair açı hatası, potential reaction
+   time, duel listesi.
+3. **Gelişmiş analiz (Oturum D)**: ekonomi ekranı (round bazlı spend/buy), side split, momentum,
+   heatmap.
 
 ## Test komutları
 

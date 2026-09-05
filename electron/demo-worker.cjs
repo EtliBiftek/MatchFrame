@@ -227,7 +227,7 @@ function inferTickRate(roundStarts) {
   return common.reduce((best, value) => Math.abs(value - median) < Math.abs(best - median) ? value : best, 64);
 }
 
-function buildRoundMeta(roundStarts, roundEnds, maxTick) {
+function buildRoundMeta(roundStarts, roundEnds, maxTick, freezeEnds = []) {
   let starts = [...roundStarts]
     .map((event) => ({
       tick: eventTick(event),
@@ -249,14 +249,24 @@ function buildRoundMeta(roundStarts, roundEnds, maxTick) {
     });
   }
 
+  // Freeze bitişi round'un "gerçek" başlangıcıdır: round süresi ve replay
+  // atlama hedefi buradan hesaplanır (event eşleştirmesi hâlâ round_start'a göre).
+  const freeze = [...(freezeEnds || [])]
+    .map(eventTick)
+    .filter((tick) => tick > 0)
+    .sort((a, b) => a - b);
+
   return starts.map((start, index) => {
     const nextStart = starts[index + 1]?.tick;
     const matchingEnd = ends.find((end) => end >= start.tick && (nextStart == null || end < nextStart));
     const endTick = matchingEnd ?? (nextStart != null ? Math.max(start.tick, nextStart - 1) : maxTick);
+    const upper = nextStart != null ? nextStart : endTick + 1;
+    const freezeEndTick = freeze.find((tick) => tick > start.tick && tick < upper) ?? null;
     return {
       number: Number.isFinite(start.played) ? start.played + 1 : index + 1,
       startTick: start.tick,
-      endTick: Math.max(start.tick, endTick)
+      endTick: Math.max(start.tick, endTick),
+      freezeEndTick
     };
   });
 }
@@ -316,6 +326,33 @@ parentPort.on('message', ({ file }) => {
     ]);
     const impacts = safeEvent(file, 'bullet_impact', ['user_steamid', 'user_name'], ['X', 'Y', 'Z']);
     const freezeEnds = safeEvent(file, 'round_freeze_end', [], ['total_rounds_played']);
+
+    reportProgress(23, 'Ekonomi ve roster eventleri ayrıştırılıyor…');
+    // Aşama 4 kalanı: ekonomi, spawn/takım değişimi, disconnect, maç başı
+    const purchases = safeEventVariants(file, 'item_purchase', [
+      [['user_steamid', 'user_name'], ['weapon', 'cost', 'team', 'total_rounds_played']],
+      [['user_steamid', 'user_name'], ['weapon', 'cost']],
+      [['user_steamid'], ['weapon']],
+      [['user_steamid'], []]
+    ]);
+    const spawns = safeEventVariants(file, 'player_spawn', [
+      [['user_steamid', 'user_name'], ['team_num', 'total_rounds_played']],
+      [['user_steamid', 'user_name'], ['total_rounds_played']],
+      [['user_steamid'], []]
+    ]);
+    const teamChanges = safeEventVariants(file, 'player_team', [
+      [['user_steamid', 'user_name'], ['team', 'oldteam', 'isbot', 'total_rounds_played']],
+      [['user_steamid', 'user_name'], ['team']],
+      [['user_steamid'], []]
+    ]);
+    const disconnects = safeEventVariants(file, 'player_disconnect', [
+      [['user_steamid', 'user_name'], ['reason', 'total_rounds_played']],
+      [['user_steamid'], []]
+    ]);
+    const matchStarts = safeEventVariants(file, 'begin_new_match', [
+      [[], ['total_rounds_played']],
+      [[], []]
+    ]);
 
     reportProgress(24, 'Utility eventleri ayrıştırılıyor…');
     const smokeStarts = safeEvent(file, 'smokegrenade_detonate', ['player_steamid', 'player_name'], []);
@@ -384,7 +421,7 @@ parentPort.on('message', ({ file }) => {
 
     reportProgress(97, 'Timeline ve round indexleri hazırlanıyor…');
     const tickRate = inferTickRate(roundStarts);
-    const roundMeta = buildRoundMeta(roundStarts, roundEnds, maxTick);
+    const roundMeta = buildRoundMeta(roundStarts, roundEnds, maxTick, freezeEnds);
     const bounds = boundsFromFrames(frames);
 
     reportProgress(100, 'Demo hazır.');
@@ -403,6 +440,11 @@ parentPort.on('message', ({ file }) => {
         impacts,
         freezeEnds,
         blinds: playerBlinds,
+        purchases,
+        spawns,
+        teamChanges,
+        disconnects,
+        matchStarts,
         eventStatus,
         plants,
         defuses,

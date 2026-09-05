@@ -1,0 +1,7650 @@
+{
+  "header": {
+    "map_name": "de_mirage",
+    "server_name": "Utility Test",
+    "playback_ticks": 0,
+    "playback_time": 0
+  },
+  "file": "C:/demos/utility-heavy.dem",
+  "players": [
+    {
+      "name": "alpha",
+      "steamid": "76561198000000001",
+      "_inventory": [
+        "weapon_flashbang",
+        "weapon_smokegrenade"
+      ],
+      "team_number": 2,
+      "team_name": ""
+    },
+    {
+      "name": "bravo",
+      "steamid": "76561198000000002",
+      "_inventory": [
+        "weapon_hegrenade"
+      ],
+      "team_number": 2,
+      "team_name": ""
+    },
+    {
+      "name": "charlie",
+      "steamid": "76561198000000003",
+      "_inventory": [
+        "weapon_molotov"
+      ],
+      "team_number": 2,
+      "team_name": ""
+    },
+    {
+      "name": "delta",
+      "steamid": "76561198000000004",
+      "_inventory": [
+        "weapon_smokegrenade"
+      ],
+      "team_number": 3,
+      "team_name": ""
+    },
+    {
+      "name": "echo",
+      "steamid": "76561198000000005",
+      "_inventory": [
+        "weapon_incgrenade"
+      ],
+      "team_number": 3,
+      "team_name": ""
+    },
+    {
+      "name": "foxtrot",
+      "steamid": "76561198000000006",
+      "_inventory": [
+        "weapon_hegrenade"
+      ],
+      "team_number": 3,
+      "team_name": ""
+    }
+  ],
+  "roundStarts": [
+    {
+      "tick": 0,
+      "total_rounds_played": 0,
+      "is_warmup_period": false,
+      "round_start_time": 2
+    },
+    {
+      "tick": 3200,
+      "total_rounds_played": 1,
+      "is_warmup_period": false,
+      "round_start_time": 4
+    },
+    {
+      "tick": 6400,
+      "total_rounds_played": 2,
+      "is_warmup_period": false,
+      "round_start_time": 6
+    }
+  ],
+  "rounds": [
+    {
+      "tick": 3000,
+      "total_rounds_played": 1,
+      "winner": 2,
+      "reason": 7
+    },
+    {
+      "tick": 6200,
+      "total_rounds_played": 2,
+      "winner": 3,
+      "reason": 7
+    },
+    {
+      "tick": 9400,
+      "total_rounds_played": 3
+    }
+  ],
+  "roundMeta": [
+    {
+      "number": 1,
+      "startTick": 0,
+      "endTick": 3000,
+      "freezeEndTick": 320
+    },
+    {
+      "number": 2,
+      "startTick": 3200,
+      "endTick": 6200,
+      "freezeEndTick": 3520
+    },
+    {
+      "number": 3,
+      "startTick": 6400,
+      "endTick": 9400,
+      "freezeEndTick": 6720
+    }
+  ],
+  "deaths": [
+    {
+      "tick": 5000,
+      "attacker_steamid": "76561198000000006",
+      "attacker_name": "foxtrot",
+      "user_steamid": "76561198000000001",
+      "user_name": "alpha",
+      "weapon": "m4a1",
+      "headshot": false,
+      "penetrated": false,
+      "noscope": false,
+      "thrusmoke": false,
+      "attackerblind": false,
+      "attackerinair": false,
+      "user_X": 100,
+      "user_Y": 100,
+      "user_Z": 0
+    }
+  ],
+  "plants": [],
+  "defuses": [],
+  "explosions": [],
+  "damage": [
+    {
+      "tick": 1510,
+      "attacker_steamid": "76561198000000003",
+      "attacker_name": "charlie",
+      "user_steamid": "76561198000000004",
+      "user_name": "delta",
+      "weapon": "hegrenade",
+      "dmg_health": 85,
+      "dmg_armor": 0,
+      "hitgroup": 2,
+      "user_X": 0,
+      "user_Y": 0,
+      "user_Z": 0
+    },
+    {
+      "tick": 1520,
+      "attacker_steamid": "76561198000000003",
+      "attacker_name": "charlie",
+      "user_steamid": "76561198000000005",
+      "user_name": "echo",
+      "weapon": "hegrenade",
+      "dmg_health": 42,
+      "dmg_armor": 0,
+      "hitgroup": 2,
+      "user_X": 0,
+      "user_Y": 0,
+      "user_Z": 0
+    },
+    {
+      "tick": 1900,
+      "attacker_steamid": "76561198000000003",
+      "attacker_name": "charlie",
+      "user_steamid": "76561198000000005",
+      "user_name": "echo",
+      "weapon": "inferno",
+      "dmg_health": 30,
+      "dmg_armor": 0,
+      "hitgroup": 2,
+      "user_X": 0,
+      "user_Y": 0,
+      "user_Z": 0
+    },
+    {
+      "tick": 4200,
+      "attacker_steamid": "76561198000000005",
+      "attacker_name": "echo",
+      "user_steamid": "76561198000000001",
+      "user_name": "alpha",
+      "weapon": "inferno",
+      "dmg_health": 25,
+      "dmg_armor": 0,
+      "hitgroup": 2,
+      "user_X": 0,
+      "user_Y": 0,
+      "user_Z": 0
+    },
+    {
+      "tick": 4210,
+      "attacker_steamid": "76561198000000006",
+      "attacker_name": "foxtrot",
+      "user_steamid": "76561198000000002",
+      "user_name": "bravo",
+      "weapon": "hegrenade",
+      "dmg_health": 60,
+      "dmg_armor": 0,
+      "hitgroup": 2,
+      "user_X": 0,
+      "user_Y": 0,
+      "user_Z": 0
+    },
+    {
+      "tick": 4960,
+      "attacker_steamid": "76561198000000006",
+      "attacker_name": "foxtrot",
+      "user_steamid": "76561198000000001",
+      "user_name": "alpha",
+      "weapon": "m4a1",
+      "dmg_health": 44,
+      "dmg_armor": 0,
+      "hitgroup": 2,
+      "user_X": 0,
+      "user_Y": 0,
+      "user_Z": 0
+    },
+    {
+      "tick": 5100,
+      "attacker_steamid": "76561198000000006",
+      "attacker_name": "foxtrot",
+      "user_steamid": "76561198000000001",
+      "user_name": "alpha",
+      "weapon": "m4a1",
+      "dmg_health": 16,
+      "dmg_armor": 0,
+      "hitgroup": 2,
+      "user_X": 0,
+      "user_Y": 0,
+      "user_Z": 0
+    }
+  ],
+  "shots": [],
+  "blinds": [
+    {
+      "tick": 740,
+      "user_steamid": "76561198000000004",
+      "user_name": "delta",
+      "blind_duration": 2.5,
+      "attacker_steamid": "76561198000000001",
+      "attacker_name": "alpha"
+    },
+    {
+      "tick": 900,
+      "user_steamid": "76561198000000005",
+      "user_name": "echo",
+      "blind_duration": 1.8
+    },
+    {
+      "tick": 1320,
+      "user_steamid": "76561198000000003",
+      "user_name": "charlie",
+      "blind_duration": 3,
+      "attacker_steamid": "76561198000000002",
+      "attacker_name": "bravo"
+    },
+    {
+      "tick": 3740,
+      "user_steamid": "76561198000000001",
+      "user_name": "alpha",
+      "blind_duration": 2,
+      "attacker_steamid": "76561198000000004",
+      "attacker_name": "delta"
+    },
+    {
+      "tick": 3760,
+      "user_steamid": "76561198000000002",
+      "user_name": "bravo",
+      "blind_duration": 1,
+      "attacker_steamid": "76561198000000004",
+      "attacker_name": "delta"
+    }
+  ],
+  "freezeEnds": [
+    {
+      "tick": 320,
+      "total_rounds_played": 0
+    },
+    {
+      "tick": 3520,
+      "total_rounds_played": 1
+    },
+    {
+      "tick": 6720,
+      "total_rounds_played": 2
+    }
+  ],
+  "bomb": {
+    "plants": [],
+    "defuses": [],
+    "explosions": [],
+    "drops": [],
+    "pickups": []
+  },
+  "utility": {
+    "smokeStarts": [
+      {
+        "tick": 500,
+        "user_steamid": "76561198000000001",
+        "user_name": "alpha",
+        "user_X": -320,
+        "user_Y": 260,
+        "user_Z": 0
+      },
+      {
+        "tick": 2600,
+        "user_steamid": "76561198000000002",
+        "user_name": "bravo",
+        "user_X": 80,
+        "user_Y": 80,
+        "user_Z": 0
+      },
+      {
+        "tick": 3600,
+        "user_steamid": "76561198000000004",
+        "user_name": "delta",
+        "user_X": 210,
+        "user_Y": -140,
+        "user_Z": 0
+      },
+      {
+        "tick": 7000,
+        "user_steamid": "76561198000000001",
+        "user_name": "alpha",
+        "user_X": -200,
+        "user_Y": 300,
+        "user_Z": 0
+      }
+    ],
+    "smokeEnds": [
+      {
+        "tick": 1900,
+        "user_steamid": "76561198000000001",
+        "user_name": "alpha",
+        "user_X": 0,
+        "user_Y": 0,
+        "user_Z": 0
+      },
+      {
+        "tick": 4800,
+        "user_steamid": "76561198000000004",
+        "user_name": "delta",
+        "user_X": 0,
+        "user_Y": 0,
+        "user_Z": 0
+      },
+      {
+        "tick": 8200,
+        "user_steamid": "76561198000000001",
+        "user_name": "alpha",
+        "user_X": 0,
+        "user_Y": 0,
+        "user_Z": 0
+      }
+    ],
+    "infernoStarts": [
+      {
+        "tick": 1700,
+        "user_steamid": "76561198000000003",
+        "user_name": "charlie",
+        "user_X": 60,
+        "user_Y": 90,
+        "user_Z": 0
+      },
+      {
+        "tick": 4000,
+        "user_steamid": "76561198000000005",
+        "user_name": "echo",
+        "user_X": 240,
+        "user_Y": -100,
+        "user_Z": 0
+      }
+    ],
+    "infernoEnds": [
+      {
+        "tick": 2500,
+        "user_steamid": "76561198000000003",
+        "user_name": "charlie",
+        "user_X": 0,
+        "user_Y": 0,
+        "user_Z": 0
+      },
+      {
+        "tick": 4600,
+        "user_steamid": "76561198000000005",
+        "user_name": "echo",
+        "user_X": 0,
+        "user_Y": 0,
+        "user_Z": 0
+      }
+    ],
+    "heDetonates": [
+      {
+        "tick": 1500,
+        "user_steamid": "76561198000000003",
+        "user_name": "charlie",
+        "user_X": -100,
+        "user_Y": 120,
+        "user_Z": 0
+      },
+      {
+        "tick": 2300,
+        "user_steamid": "76561198000000002",
+        "user_name": "bravo",
+        "user_X": 20,
+        "user_Y": 20,
+        "user_Z": 0
+      },
+      {
+        "tick": 4200,
+        "user_steamid": "76561198000000006",
+        "user_name": "foxtrot",
+        "user_X": 260,
+        "user_Y": -80,
+        "user_Z": 0
+      }
+    ],
+    "flashDetonates": [
+      {
+        "tick": 700,
+        "user_steamid": "76561198000000001",
+        "user_name": "alpha",
+        "user_X": -300,
+        "user_Y": 240,
+        "user_Z": 0
+      },
+      {
+        "tick": 880,
+        "user_steamid": "76561198000000002",
+        "user_name": "bravo",
+        "user_X": -280,
+        "user_Y": 200,
+        "user_Z": 0
+      },
+      {
+        "tick": 1300,
+        "user_steamid": "76561198000000002",
+        "user_name": "bravo",
+        "user_X": -260,
+        "user_Y": 180,
+        "user_Z": 0
+      },
+      {
+        "tick": 2100,
+        "user_steamid": "76561198000000001",
+        "user_name": "alpha",
+        "user_X": 0,
+        "user_Y": 0,
+        "user_Z": 0
+      },
+      {
+        "tick": 3700,
+        "user_steamid": "76561198000000004",
+        "user_name": "delta",
+        "user_X": 220,
+        "user_Y": -120,
+        "user_Z": 0
+      }
+    ],
+    "playerBlinds": [],
+    "decoyStarts": [
+      {
+        "tick": 2500,
+        "user_steamid": "76561198000000002",
+        "user_name": "bravo",
+        "user_X": 40,
+        "user_Y": 40,
+        "user_Z": 0
+      }
+    ],
+    "decoyEnds": []
+  },
+  "frames": [
+    {
+      "tick": 0,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 128,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 256,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 384,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 512,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 640,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 768,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 896,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 1024,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 1152,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 1280,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 1408,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 1536,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 1664,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 1792,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 1920,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 2048,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 2176,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 2304,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 2432,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 2560,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 2688,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 2816,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 2944,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 3072,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 3200,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 3328,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 3456,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 3584,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 3712,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 3840,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 3968,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 4096,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 4224,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 4352,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 4480,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 4608,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 4736,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 4864,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 4992,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 5120,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 5248,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 5376,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 5504,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 5632,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 5760,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 5888,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 6016,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 6144,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 6272,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 6400,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 6528,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 6656,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 6784,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 6912,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 7040,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 7168,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 7296,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 7424,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 7552,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 7680,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 7808,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 7936,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 8064,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 8192,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 8320,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 8448,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 8576,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 8704,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 8832,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 8960,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 9088,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 9216,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    },
+    {
+      "tick": 9344,
+      "players": [
+        {
+          "steamid": "76561198000000001",
+          "name": "alpha",
+          "X": -800,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 0,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_flashbang",
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000002",
+          "name": "bravo",
+          "X": -640,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 37,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000003",
+          "name": "charlie",
+          "X": -480,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 74,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 2,
+          "inventory": [
+            "weapon_molotov"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000004",
+          "name": "delta",
+          "X": -320,
+          "Y": -400,
+          "Z": 0,
+          "yaw": 111,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_smokegrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000005",
+          "name": "echo",
+          "X": -160,
+          "Y": -280,
+          "Z": 0,
+          "yaw": 148,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_incgrenade"
+          ],
+          "has_c4": false
+        },
+        {
+          "steamid": "76561198000000006",
+          "name": "foxtrot",
+          "X": 0,
+          "Y": -160,
+          "Z": 0,
+          "yaw": 185,
+          "health": 100,
+          "is_alive": true,
+          "team_num": 3,
+          "inventory": [
+            "weapon_hegrenade"
+          ],
+          "has_c4": false
+        }
+      ]
+    }
+  ],
+  "maxTick": 9400,
+  "tickRate": 64,
+  "durationSeconds": 146.875,
+  "sampleStep": 8,
+  "bounds": {
+    "minX": -2000,
+    "maxX": 2000,
+    "minY": -2000,
+    "maxY": 2000
+  },
+  "cameraTracks": [],
+  "eventStatus": {},
+  "purchases": [
+    {
+      "tick": 6500,
+      "user_steamid": "76561198000000001",
+      "user_name": "alpha",
+      "weapon": "ak47",
+      "cost": 2700,
+      "team": 2,
+      "total_rounds_played": 2
+    },
+    {
+      "tick": 6520,
+      "user_steamid": "76561198000000002",
+      "user_name": "bravo",
+      "weapon": "awp",
+      "cost": 4750,
+      "team": 2,
+      "total_rounds_played": 2
+    },
+    {
+      "tick": 6540,
+      "user_steamid": "76561198000000004",
+      "user_name": "delta",
+      "weapon": "m4a1",
+      "cost": 3000,
+      "team": 3,
+      "total_rounds_played": 2
+    },
+    {
+      "tick": 6560,
+      "user_steamid": "76561198000000005",
+      "user_name": "echo",
+      "weapon": "kevlar",
+      "cost": 650,
+      "team": 3,
+      "total_rounds_played": 2
+    }
+  ],
+  "disconnects": [
+    {
+      "tick": 7000,
+      "user_steamid": "76561198000000003",
+      "user_name": "charlie",
+      "reason": "disconnect"
+    }
+  ]
+}

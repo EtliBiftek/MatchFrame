@@ -267,9 +267,89 @@ function buildMissingEvents() {
   return builder.finalize();
 }
 
+/* ------------------------------------------------------------------ *
+ * 6) utility-heavy — utility analizi için zengin senaryo
+ * ------------------------------------------------------------------ */
+function buildUtilityHeavy() {
+  const builder = makeDemo({
+    map: 'de_mirage',
+    server: 'Utility Test',
+    file: 'C:/demos/utility-heavy.dem',
+    tickRate: 64,
+    players: [
+      { name: 'alpha', steamid: String(76561198000000001n), side: 'T', inventory: ['weapon_flashbang', 'weapon_smokegrenade'] },
+      { name: 'bravo', steamid: String(76561198000000002n), side: 'T', inventory: ['weapon_hegrenade'] },
+      { name: 'charlie', steamid: String(76561198000000003n), side: 'T', inventory: ['weapon_molotov'] },
+      { name: 'delta', steamid: String(76561198000000004n), side: 'CT', inventory: ['weapon_smokegrenade'] },
+      { name: 'echo', steamid: String(76561198000000005n), side: 'CT', inventory: ['weapon_incgrenade'] },
+      { name: 'foxtrot', steamid: String(76561198000000006n), side: 'CT', inventory: ['weapon_hegrenade'] }
+    ]
+  });
+  const p = builder.players;
+
+  // Round 1
+  builder.addRound({ startTick: 0, endTick: 3000, freezeTime: 320, winner: 'T', reason: 7 });
+  builder.addUtility({ kind: 'smoke', tick: 500, player: p[0], x: -320, y: 260 });
+  builder.addUtility({ kind: 'smokeEnd', tick: 1900, player: p[0] });
+  builder.addUtility({ kind: 'flash', tick: 700, player: p[0], x: -300, y: 240 });
+  builder.addBlind({ tick: 740, attacker: p[0], victim: p[3], duration: 2.5 });
+
+  builder.addUtility({ kind: 'flash', tick: 880, player: p[1], x: -280, y: 200 });
+  // attacker alanı olmayan player_blind: son flashbang_detonate sahibine bağlanmalı
+  builder.addBlind({ tick: 900, victim: p[4], duration: 1.8, noAttacker: true });
+
+  builder.addUtility({ kind: 'flash', tick: 1300, player: p[1], x: -260, y: 180 });
+  builder.addBlind({ tick: 1320, attacker: p[1], victim: p[2], duration: 3.0 }); // takım arkadaşı
+
+  builder.addUtility({ kind: 'he', tick: 1500, player: p[2], x: -100, y: 120 });
+  builder.addDamage({ tick: 1510, attacker: p[2], victim: p[3], weapon: 'hegrenade', damage: 85 });
+  builder.addDamage({ tick: 1520, attacker: p[2], victim: p[4], weapon: 'hegrenade', damage: 42 });
+
+  builder.addUtility({ kind: 'molotov', tick: 1700, player: p[2], x: 60, y: 90 });
+  builder.addUtility({ kind: 'molotovEnd', tick: 2500, player: p[2] });
+  builder.addDamage({ tick: 1900, attacker: p[2], victim: p[4], weapon: 'inferno', damage: 30 });
+
+  builder.addUtility({ kind: 'flash', tick: 2100, player: p[0], x: 0, y: 0 }); // boşa
+  builder.addUtility({ kind: 'he', tick: 2300, player: p[1], x: 20, y: 20 }); // boşa
+  builder.addUtility({ kind: 'decoy', tick: 2500, player: p[1], x: 40, y: 40 });
+  builder.addUtility({ kind: 'smoke', tick: 2600, player: p[1], x: 80, y: 80 }); // expire yok
+
+  // Round 2
+  builder.addRound({ startTick: 3200, endTick: 6200, freezeTime: 320, winner: 'CT', reason: 7 });
+  builder.addUtility({ kind: 'smoke', tick: 3600, player: p[3], x: 210, y: -140 });
+  builder.addUtility({ kind: 'smokeEnd', tick: 4800, player: p[3] });
+  builder.addUtility({ kind: 'flash', tick: 3700, player: p[3], x: 220, y: -120 });
+  builder.addBlind({ tick: 3740, attacker: p[3], victim: p[0], duration: 2.0 });
+  builder.addBlind({ tick: 3760, attacker: p[3], victim: p[1], duration: 1.0 });
+  builder.addUtility({ kind: 'molotov', tick: 4000, player: p[4], x: 240, y: -100 });
+  builder.addUtility({ kind: 'molotovEnd', tick: 4600, player: p[4] });
+  builder.addDamage({ tick: 4200, attacker: p[4], victim: p[0], weapon: 'inferno', damage: 25 });
+  builder.addUtility({ kind: 'he', tick: 4200, player: p[5], x: 260, y: -80 });
+  builder.addDamage({ tick: 4210, attacker: p[5], victim: p[1], weapon: 'hegrenade', damage: 60 });
+  // Ölüm öncesi (normal) ve ölüm sonrası (aldatıcı) hasar
+  builder.addDamage({ tick: 4960, attacker: p[5], victim: p[0], weapon: 'm4a1', damage: 44 });
+  // alpha ölürken elinde flash ve smoke var (kullanılmadan kalan utility)
+  builder.addKill({ tick: 5000, attacker: p[5], victim: p[0], weapon: 'm4a1' });
+  builder.addDamage({ tick: 5100, attacker: p[5], victim: p[0], weapon: 'm4a1', damage: 16 });
+
+  // Round 3 — ekonomi + disconnect
+  builder.addRound({ startTick: 6400, endTick: 9400, freezeTime: 320 });
+  builder.addPurchase({ tick: 6500, player: p[0], weapon: 'ak47', cost: 2700, round: 3 });
+  builder.addPurchase({ tick: 6520, player: p[1], weapon: 'awp', cost: 4750, round: 3 });
+  builder.addPurchase({ tick: 6540, player: p[3], weapon: 'm4a1', cost: 3000, round: 3 });
+  builder.addPurchase({ tick: 6560, player: p[4], weapon: 'kevlar', cost: 650, round: 3 });
+  builder.addDisconnect({ tick: 7000, player: p[2] });
+  builder.addUtility({ kind: 'smoke', tick: 7000, player: p[0], x: -200, y: 300 });
+  builder.addUtility({ kind: 'smokeEnd', tick: 8200, player: p[0] });
+
+  builder.buildFrames(128, { slim: true });
+  return builder.finalize();
+}
+
 function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   write('basic-match', buildBasicMatch());
+  write('utility-heavy', buildUtilityHeavy());
   write('clutch-1v3', buildClutch());
   write('trade-scenario', buildTradeScenario());
   write('flash-assist', buildFlashAssist());

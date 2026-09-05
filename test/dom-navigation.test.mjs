@@ -11,6 +11,7 @@ test('scriptler hatasız yüklenir ve MF namespace kurulur', async () => {
   assert.ok(ui.MF.filters, 'filters yok');
   assert.ok(ui.MF.navigation, 'navigation yok');
   assert.ok(ui.MF.analysis?.buildMatchModel, 'analiz modülü yok');
+  assert.ok(ui.MF.analysis?.buildUtilityModel, 'utility analiz modülü yok');
   ui.close();
 });
 

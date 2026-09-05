@@ -31,7 +31,7 @@
     makeDataset, missingDataset, isAvailable, normalizeWeapon, sideFromTeamNumber,
     sortByTick, roundIndexForTick, assignRounds, normalizeKillEvent, normalizeHurtEvent,
     normalizeShotEvent, normalizeUtilityEvent, normalizeBlindEvent, normalizeBombEvent,
-    roundEndReasonLabel
+    normalizePurchaseEvent, normalizeActorEvent, roundEndReasonLabel
   } = common;
 
   /* ------------------------------------------------------------------ *
@@ -233,7 +233,8 @@
         multiKills: { 2: 0, 3: 0, 4: 0, 5: 0 },
         clutches: { attempts: 0, won: 0, byCount: {} },
         utility: { smoke: 0, flash: 0, he: 0, molotov: 0, decoy: 0 },
-        utilityDamage: 0
+        utilityDamage: 0,
+        economy: { spend: 0, buys: 0, pistols: 0, rifles: 0, awps: 0 }
       },
       rounds: {},
       weapons: {},
@@ -252,6 +253,8 @@
         assists: 0,
         damage: 0,
         headshotKills: 0,
+        spend: 0,
+        buys: 0,
         survived: true,
         traded: false
       };
@@ -324,6 +327,8 @@
       ...(demo.bomb?.pickups || []).map((raw) => normalizeBombEvent(raw, 'bomb_pickup'))
     ]);
     const utilityEvents = sortByTick(collectUtilityEvents(demo));
+    const purchaseEvents = sortByTick((demo.purchases || []).map(normalizePurchaseEvent));
+    const disconnectEvents = sortByTick((demo.disconnects || []).map((raw) => normalizeActorEvent(raw, 'disconnect')));
 
     /* --- veri bulunabilirliği --------------------------------------- */
     const roundEndEvents = Array.isArray(demo.roundEnds) ? demo.roundEnds : demo.rounds;
@@ -338,7 +343,11 @@
       blinds: datasetFrom(demo, 'blinds', 'player_blind', 'player_blind bu demo için parse edilmedi'),
       utility: makeDataset(utilityEvents, eventStatusOf(demo, 'smokegrenade_detonate') || eventStatusOf(demo, 'flashbang_detonate')),
       bomb: makeDataset(bombEvents, eventStatusOf(demo, 'bomb_planted')),
-      freezeEnd: datasetFrom(demo, 'freezeEnds', 'round_freeze_end', 'round_freeze_end bu demo için parse edilmedi')
+      freezeEnd: datasetFrom(demo, 'freezeEnds', 'round_freeze_end', 'round_freeze_end bu demo için parse edilmedi'),
+      purchases: datasetFrom(demo, 'purchases', 'item_purchase', 'item_purchase bu demo için parse edilmedi'),
+      spawns: datasetFrom(demo, 'spawns', 'player_spawn', 'player_spawn bu demo için parse edilmedi'),
+      teamChanges: datasetFrom(demo, 'teamChanges', 'player_team', 'player_team bu demo için parse edilmedi'),
+      disconnects: datasetFrom(demo, 'disconnects', 'player_disconnect', 'player_disconnect bu demo için parse edilmedi')
     };
 
     if (availability.rounds.available && !availability.rounds.count) availability.rounds = makeDataset(null, 'round_start eventi bulunamadı');
@@ -353,6 +362,8 @@
       index,
       startTick: num(meta?.startTick) ?? 0,
       endTick: num(meta?.endTick) ?? num(demo.maxTick) ?? 0,
+      freezeEndTick: num(meta?.freezeEndTick) ?? null,
+      jumpTick: num(meta?.freezeEndTick) ?? num(meta?.startTick) ?? 0,
       durationSeconds: 0,
       winnerTeamNumber: 0,
       winnerSide: '',
@@ -373,7 +384,9 @@
       survivors: { T: 0, CT: 0 },
       clutch: null,
       scoreAfter: { T: 0, CT: 0 },
-      roster: { T: [], CT: [] }
+      roster: { T: [], CT: [] },
+      rosterChanges: [],
+      economy: { spend: 0, buys: 0 }
     }));
 
     assignRounds(kills, rounds);
@@ -382,9 +395,11 @@
     assignRounds(blinds, rounds);
     assignRounds(bombEvents, rounds);
     assignRounds(utilityEvents, rounds);
+    assignRounds(purchaseEvents, rounds);
+    assignRounds(disconnectEvents, rounds);
 
     const roundsById = rounds.map((round) => ({
-      kills: [], damage: [], shots: [], utility: [], blinds: [], bomb: []
+      kills: [], damage: [], shots: [], utility: [], blinds: [], bomb: [], purchases: [], disconnects: []
     }));
 
     const playerIndex = new Map();
@@ -425,6 +440,8 @@
     for (const event of blinds) if (event.roundIndex >= 0) roundsById[event.roundIndex].blinds.push(event);
     for (const event of utilityEvents) if (event.roundIndex >= 0) roundsById[event.roundIndex].utility.push(event);
     for (const event of bombEvents) if (event.roundIndex >= 0) roundsById[event.roundIndex].bomb.push(event);
+    for (const event of purchaseEvents) if (event.roundIndex >= 0) roundsById[event.roundIndex].purchases.push(event);
+    for (const event of disconnectEvents) if (event.roundIndex >= 0) roundsById[event.roundIndex].disconnects.push(event);
 
     // Bilinmeyen taraflar round içindeki kill ilişkisinden tamamlanır.
     for (let i = 0; i < rounds.length; i++) {
@@ -476,7 +493,16 @@
       round.utility = bucket.utility;
       round.blinds = bucket.blinds;
       round.bomb = bucket.bomb;
-      round.durationSeconds = Math.max(0, (round.endTick - round.startTick) / tickRate);
+      round.purchases = bucket.purchases;
+      round.rosterChanges = bucket.disconnects.map((event) => ({
+        steamId: event.actorSteamId,
+        name: event.actorName,
+        tick: event.tick,
+        kind: 'disconnect'
+      }));
+      // Round süresi ve replay hedefi freeze bitişinden başlar (varsa).
+      round.durationSeconds = Math.max(0, (round.endTick - (round.freezeEndTick ?? round.startTick)) / tickRate);
+      round.jumpTick = round.freezeEndTick ?? round.startTick;
 
       const roundKills = bucket.kills.filter((kill) => !kill.suicide && !kill.teamKill);
       round.firstKill = roundKills[0] || null;
@@ -657,11 +683,48 @@
       if (event.kind === 'defuse') player.totals.defuses += 1;
     }
 
+    if (isAvailable(availability.purchases)) {
+      for (const event of purchaseEvents) {
+        const player = event.actorSteamId ? playerIndex.get(event.actorSteamId) : null;
+        const cost = num(event.cost) || 0;
+        if (event.roundIndex >= 0) {
+          rounds[event.roundIndex].economy.spend += cost;
+          rounds[event.roundIndex].economy.buys += 1;
+        }
+        if (!player) continue;
+        player.totals.economy.spend += cost;
+        player.totals.economy.buys += 1;
+        if (event.weapon === 'awp' || event.weapon === 'scar20' || event.weapon === 'g3sg1') player.totals.economy.awps += 1;
+        else if (['ak47', 'm4a1', 'm4a1_silencer', 'aug', 'sg556', 'famas', 'galilar', 'ssg08'].includes(event.weapon)) player.totals.economy.rifles += 1;
+        else if (['glock', 'usp_silencer', 'hkp2000', 'p250', 'tec9', 'fiveseven', 'cz75a', 'deagle', 'revolver', 'elite'].includes(event.weapon)) player.totals.economy.pistols += 1;
+        if (event.round != null) {
+          const row = playerRound(player, event.round);
+          row.spend += cost;
+          row.buys += 1;
+        }
+      }
+    }
+
+    for (const event of disconnectEvents) {
+      const player = event.actorSteamId ? playerIndex.get(event.actorSteamId) : null;
+      if (!player) continue;
+      player.disconnected = true;
+    }
+
     for (const event of utilityEvents) {
-      if (event.phase !== 'detonate' && event.phase !== 'start') continue;
+      if (!common.isUtilityThrowEvent(event)) continue;
       const player = event.actorSteamId ? playerIndex.get(event.actorSteamId) : null;
       if (!player) continue;
       if (player.totals.utility[event.kind] != null) player.totals.utility[event.kind] += 1;
+    }
+
+    // Utility hasarı (HE + molotov + decoy + flashbang)
+    for (const event of damage) {
+      const kind = common.utilityDamageKind(event.weapon) || common.utilityDamageKind(event.raw?.weapon);
+      if (!kind) continue;
+      const player = event.actorSteamId ? playerIndex.get(event.actorSteamId) : null;
+      if (!player) continue;
+      player.totals.utilityDamage += num(event.damage) || 0;
     }
 
     for (const round of rounds) {
@@ -742,8 +805,10 @@
         accumulator.damage += player.totals.damage;
         accumulator.clutchWon += player.totals.clutches.won;
         accumulator.clutchAttempts += player.totals.clutches.attempts;
+        accumulator.spend += player.totals.economy.spend;
+        accumulator.buys += player.totals.economy.buys;
         return accumulator;
-      }, { kills: 0, deaths: 0, assists: 0, plants: 0, defuses: 0, entryKills: 0, entryDeaths: 0, headshotKills: 0, damage: 0, clutchWon: 0, clutchAttempts: 0 });
+      }, { kills: 0, deaths: 0, assists: 0, plants: 0, defuses: 0, entryKills: 0, entryDeaths: 0, headshotKills: 0, damage: 0, clutchWon: 0, clutchAttempts: 0, spend: 0, buys: 0 });
       totals.entrySuccessPercent = percent(totals.entryKills, totals.entryKills + totals.entryDeaths, 0);
       totals.headshotPercent = percent(totals.headshotKills, totals.kills, 0);
       // Takım ADR: round başına, oyuncu başına ortalama hasar (oyuncu tablosuyla karşılaştırılabilir).
@@ -796,7 +861,9 @@
         impacts: [],
         utility: utilityEvents,
         blinds,
-        bomb: bombEvents
+        bomb: bombEvents,
+        purchases: purchaseEvents,
+        disconnects: disconnectEvents
       },
       notes,
       config,
@@ -996,6 +1063,8 @@
       index: round.index,
       startTick: round.startTick,
       endTick: round.endTick,
+      freezeEndTick: round.freezeEndTick,
+      jumpTick: round.jumpTick ?? round.startTick,
       durationSeconds: round.durationSeconds,
       winnerSide: round.winnerSide,
       reason: round.reason,

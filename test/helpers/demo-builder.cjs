@@ -24,6 +24,7 @@ function makeDemo(options = {}) {
   const players = playerSpecs.map((spec, index) => ({
     name: spec.name || `player${index + 1}`,
     steamid: String(spec.steamid || 76561198000000001n + BigInt(index)),
+    _inventory: spec.inventory || [],
     team_number: TEAM_NUMBER[spec.side] || 0,
     team_name: spec.team_name || '',
     _side: spec.side,
@@ -85,10 +86,13 @@ function makeDemo(options = {}) {
     },
 
     addRound(config = {}) {
-      const number = demo.roundMeta.length + 1;
-      const startTick = config.startTick != null ? config.startTick : (demo.roundMeta.at(-1)?.endTick ?? 0) + 64;
+      const number = demo.roundStarts.length + 1;
+      const startTick = config.startTick != null ? config.startTick : (computeRoundMeta(demo).at(-1)?.endTick ?? 0) + 64;
       const endTick = config.endTick != null ? config.endTick : startTick + (config.length ?? 1600);
-      demo.roundMeta.push({ number, startTick, endTick });
+      if (options.freezeTime != null || config.freezeTime != null) {
+        const freezeTick = startTick + Number(config.freezeTime ?? options.freezeTime);
+        demo.freezeEnds.push({ tick: freezeTick, total_rounds_played: number - 1 });
+      }
       demo.roundStarts.push({ tick: startTick, total_rounds_played: number - 1, is_warmup_period: false, round_start_time: number * 2 });
       demo.maxTick = Math.max(demo.maxTick, endTick);
       demo.rounds.push({ tick: endTick, total_rounds_played: number });
@@ -97,6 +101,8 @@ function makeDemo(options = {}) {
         last.winner = TEAM_NUMBER[config.winner] || 0;
         last.reason = config.reason != null ? config.reason : 0;
       }
+      // Round meta worker'da (buildRoundMeta) üretilir; fixture da aynı şekli taklit eder.
+      demo.roundMeta = computeRoundMeta(demo);
       return number;
     },
 
@@ -175,6 +181,36 @@ function makeDemo(options = {}) {
       return api;
     },
 
+    addPurchase(config) {
+      const actor = api.actor(config.player);
+      demo.purchases = demo.purchases || [];
+      demo.purchases.push({
+        tick: config.tick,
+        user_steamid: actor.steamid,
+        user_name: actor.name,
+        weapon: config.weapon || 'ak47',
+        cost: config.cost != null ? config.cost : 2700,
+        team: config.team != null ? config.team : TEAM_NUMBER[api.sideOf(
+          api.players.find((candidate) => candidate.steamid === actor.steamid) || {},
+          config.round || 1
+        )] || 0,
+        total_rounds_played: config.round != null ? config.round - 1 : undefined
+      });
+      return api;
+    },
+
+    addDisconnect(config) {
+      const actor = api.actor(config.player);
+      demo.disconnects = demo.disconnects || [];
+      demo.disconnects.push({
+        tick: config.tick,
+        user_steamid: actor.steamid,
+        user_name: actor.name,
+        reason: config.reason || 'disconnect'
+      });
+      return api;
+    },
+
     addPlant(config) {
       const actor = api.actor(config.player);
       const event = { tick: config.tick, user_steamid: actor.steamid, user_name: actor.name, user_X: 500, user_Y: 500, user_Z: 0 };
@@ -219,23 +255,18 @@ function makeDemo(options = {}) {
     },
 
     addBlind(config) {
-      if (!demo.blinds) {
-        demo.utility.playerBlinds.push({
-          tick: config.tick,
-          user_steamid: api.actor(config.victim).steamid,
-          user_name: api.actor(config.victim).name,
-          blind_duration: config.duration != null ? config.duration : 2.1
-        });
-        return api;
-      }
-      demo.blinds.push({
+      const blind = {
         tick: config.tick,
-        attacker_steamid: api.actor(config.attacker).steamid,
-        attacker_name: api.actor(config.attacker).name,
         user_steamid: api.actor(config.victim).steamid,
         user_name: api.actor(config.victim).name,
         blind_duration: config.duration != null ? config.duration : 2.1
-      });
+      };
+      if (!config.noAttacker) {
+        blind.attacker_steamid = api.actor(config.attacker).steamid;
+        blind.attacker_name = api.actor(config.attacker).name;
+      }
+      if (!demo.blinds) demo.utility.playerBlinds.push(blind);
+      else demo.blinds.push(blind);
       return api;
     },
 
@@ -270,7 +301,7 @@ function makeDemo(options = {}) {
               active_weapon_ammo: 30,
               total_ammo_left: 90,
               flash_duration: 0,
-              inventory: [],
+              inventory: player._inventory || [],
               has_c4: false
             }))
           });
@@ -280,9 +311,27 @@ function makeDemo(options = {}) {
       return api;
     },
 
+    /* Sadece analiz için gereken alanları taşır; fixture boyutunu küçük tutar. */
+    slimPlayer(player, index, state) {
+      return {
+        steamid: player.steamid,
+        name: player.name,
+        X: state.X,
+        Y: state.Y,
+        Z: state.Z,
+        yaw: state.yaw,
+        health: state.health,
+        is_alive: state.is_alive,
+        team_num: state.team_num,
+        inventory: state.inventory,
+        has_c4: state.has_c4
+      };
+    },
+
     /* Tick state'ini (radar frame'leri) üretir. Taraf tespiti bu veriden yapılır. */
-    buildFrames(step = 8) {
+    buildFrames(step = 8, options = {}) {
       const frames = [];
+      if (!demo.roundMeta.length) demo.roundMeta = computeRoundMeta(demo);
       if (!demo.roundMeta.length) return api;
       const lastTick = demo.maxTick;
       for (let tick = 0; tick <= lastTick; tick += step) {
@@ -309,10 +358,10 @@ function makeDemo(options = {}) {
           active_weapon_ammo: 30,
           total_ammo_left: 90,
           flash_duration: 0,
-          inventory: [],
+          inventory: player._inventory || [],
           has_c4: false
         }));
-        frames.push({ tick, players });
+        frames.push({ tick, players: options.slim ? players.map((state, i) => api.slimPlayer(api.players[i], i, state)) : players });
       }
       demo.frames = frames;
       return api;
@@ -320,6 +369,8 @@ function makeDemo(options = {}) {
 
     finalize() {
       demo.durationSeconds = demo.maxTick / tickRate;
+      demo.purchases = demo.purchases || [];
+      demo.disconnects = demo.disconnects || [];
       if (!demo.frames.length) api.buildFrames();
       demo.bomb = {
         plants: demo.plants,
@@ -333,6 +384,28 @@ function makeDemo(options = {}) {
   };
 
   return api;
+}
+
+function computeRoundMeta(demo) {
+  const starts = [...demo.roundStarts]
+    .map((event) => ({ tick: Number(event.tick) || 0, played: Number(event.total_rounds_played) }))
+    .sort((a, b) => a.tick - b.tick);
+  const ends = [...demo.rounds].map((event) => Number(event.tick) || 0).filter((tick) => tick > 0).sort((a, b) => a - b);
+  const freeze = [...demo.freezeEnds].map((event) => Number(event.tick) || 0).filter((tick) => tick > 0).sort((a, b) => a - b);
+
+  return starts.map((start, index) => {
+    const nextStart = starts[index + 1]?.tick;
+    const matchingEnd = ends.find((end) => end >= start.tick && (nextStart == null || end < nextStart));
+    const endTick = matchingEnd ?? (nextStart != null ? Math.max(start.tick, nextStart - 1) : demo.maxTick);
+    const upper = nextStart != null ? nextStart : endTick + 1;
+    const freezeEndTick = freeze.find((tick) => tick > start.tick && tick < upper) ?? null;
+    return {
+      number: Number.isFinite(start.played) ? start.played + 1 : index + 1,
+      startTick: start.tick,
+      endTick: Math.max(start.tick, endTick),
+      freezeEndTick
+    };
+  });
 }
 
 module.exports = { makeDemo, defaultPlayers, TEAM_NUMBER };
