@@ -80,6 +80,25 @@ async function findRecursive(root, predicate) {
   return null;
 }
 
+async function largestRecursive(root, predicate) {
+  const queue = [root];
+  let largest = null;
+  while (queue.length) {
+    const dir = queue.shift();
+    let entries;
+    try { entries = await fs.promises.readdir(dir, { withFileTypes: true }); } catch (_) { continue; }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) queue.push(full);
+      else if (predicate(full, entry.name)) {
+        const size = (await fs.promises.stat(full)).size;
+        if (!largest || size > largest.size) largest = { file: full, size };
+      }
+    }
+  }
+  return largest?.file || null;
+}
+
 async function ensureVrf() {
   const root = path.join(app.getPath('userData'), 'tools', `source2viewer-${VRF_VERSION}`);
   const existing = await findRecursive(root, (_full, name) => name.toLowerCase() === 'source2viewer-cli.exe');
@@ -248,6 +267,7 @@ async function sanitizeGeometryGlbFile(source, destination) {
   const pad = (4 - (json.length % 4)) % 4;
   if (pad) json = Buffer.concat([json, Buffer.alloc(pad, 0x20)]);
   const totalLength = 12 + structure.chunks.reduce((sum, chunk) => sum + 8 + (chunk === structure.jsonChunk ? json.length : chunk.length), 0);
+  if (!Number.isSafeInteger(totalLength) || totalLength > 0xffffffff) throw new Error('GLB 4 GB sınırını aşıyor.');
   const sourceHandle = await fs.promises.open(source, 'r');
   const destinationHandle = await fs.promises.open(destination, 'w');
   try {
@@ -286,7 +306,9 @@ async function exportMapGlb(cli, mapVpk, internal, gameInfo, outputDir, cacheRoo
   const args = ['-i', mapVpk, '-o', outputDir, '-d', '--vpk_filepath', internal, '--gltf_export_format', 'glb', '--threads', '1', '--game', gameInfo];
   let exportError = null;
   try { await execFileAsync(cli, args, { timeout: 20 * 60 * 1000 }); } catch (error) { exportError = error; }
-  const directGlb = await findRecursive(outputDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
+  // VRF may emit dependency GLBs before the actual map. The map output is normally by far the
+  // largest file, while returning the first directory entry can feed Babylon a tiny prop GLB.
+  const directGlb = await largestRecursive(outputDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
   if (directGlb) return directGlb;
 
   // Fallback: export the entire map VPK unchanged first. Maps have world-node/entity/
@@ -307,7 +329,7 @@ async function exportMapGlb(cli, mapVpk, internal, gameInfo, outputDir, cacheRoo
   let standaloneError = null;
   try { await execFileAsync(cli, ['-i', compiled, '-o', outputDir, '-d', '--gltf_export_format', 'glb', '--threads', '1', '--game', gameInfo], { timeout: 20 * 60 * 1000, cwd: rawDir }); }
   catch (error) { standaloneError = error; }
-  const fallbackGlb = await findRecursive(outputDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
+  const fallbackGlb = await largestRecursive(outputDir, (_full, name) => name.toLowerCase().endsWith('.glb'));
   if (!fallbackGlb) throw new Error(`Map GLB çıktısı oluşturulamadı.${standaloneError ? `\n${String(standaloneError.message || standaloneError).trim()}` : ''}`);
   return fallbackGlb;
 }
@@ -337,9 +359,14 @@ async function prepare(mapName) {
       const rawGlb = await exportMapGlb(cli, mapVpk, `maps/${map}.vmap_c`, gameInfo, outputDir, cacheRoot);
       const temp = `${cachedGlb}.tmp-${process.pid}-${Date.now()}`;
       await fs.promises.rm(temp, { force: true });
-      await sanitizeGeometryGlbFile(rawGlb, temp);
-      await fs.promises.rm(cachedGlb, { force: true });
-      await fs.promises.rename(temp, cachedGlb);
+      try {
+        await sanitizeGeometryGlbFile(rawGlb, temp);
+        if (!(await isSafeGlb(temp))) throw new Error('Geçici POV GLB doğrulamasından geçemedi.');
+        await fs.promises.rm(cachedGlb, { force: true });
+        await fs.promises.rename(temp, cachedGlb);
+      } finally {
+        await fs.promises.rm(temp, { force: true });
+      }
     }
     if (!(await isSafeGlb(cachedGlb))) throw new Error('POV cache oluşturuldu fakat GLB doğrulamasından geçemedi.');
     return { ok: true, map, url: registerAsset(cachedGlb), sourceScale: 0.0254, renderer: `Source 2 Viewer ${VRF_VERSION} map VPK → glTF GLB / safe-colour conversion`, cacheVersion: CACHE_VERSION, cs2RunningRequired: false };

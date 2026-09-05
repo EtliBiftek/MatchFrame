@@ -50,8 +50,12 @@ jobs:
           node --check electron/demo-worker.cjs
           node --check electron/preload.cjs
           node --check electron/pov-export-v5.cjs
+          node --check electron/pov-export-v6.cjs
           node --check ui/app.js
           node --check ui/pov.js
+          node --check ui/pov-stability.js
+          node --check ui/pov-world.js
+          node --check ui/runtime-v4.js
           node --check ui/radar.js
           node --check ui/enhance.js
 
