@@ -200,6 +200,40 @@
     return NON_PLAYER_WEAPONS.has(String(weaponKey || '').toLowerCase());
   }
 
+  /* Utility (nade) hasarı veren silahlar: HE, molotov/inferno, decoy, flashbang. */
+  const UTILITY_DAMAGE_WEAPON_KEYS = new Set(['hegrenade', 'he', 'molotov', 'inferno', 'incgrenade', 'firebomb', 'decoy', 'flashbang']);
+
+  function utilityDamageKind(weapon) {
+    const key = normalizeWeapon(weapon).key;
+    if (key === 'hegrenade' || key === 'he') return 'he';
+    if (key === 'molotov' || key === 'inferno' || key === 'incgrenade' || key === 'firebomb') return 'molotov';
+    if (key === 'decoy') return 'decoy';
+    if (key === 'flashbang') return 'flash';
+    return null;
+  }
+
+  function isUtilityWeapon(weapon) {
+    return utilityDamageKind(weapon) != null || UTILITY_DAMAGE_WEAPON_KEYS.has(normalizeWeapon(weapon).key);
+  }
+
+  /*
+   * Bir utility event'i "atış" sayılır mı?
+   * smoke/flash/he -> detonate, molotov/decoy -> start (inferno_startburn / decoy_started).
+   * expire/fade olayları süre ölçümü için kullanılır, atış sayısına girmez.
+   */
+  function isUtilityThrowEvent(event) {
+    const kind = event?.kind;
+    const phase = event?.phase;
+    if (!kind) return false;
+    if (kind === 'molotov' || kind === 'decoy') return phase === 'start';
+    return phase === 'detonate';
+  }
+
+  /* Atış event'ini kapatan bitiş event'i mi? (smokegrenade_expired / inferno_expire) */
+  function isUtilityEndEvent(event) {
+    return event?.phase === 'expire' && (event?.kind === 'smoke' || event?.kind === 'molotov');
+  }
+
   /* ------------------------------------------------------------------ *
    * Uzay / geometri
    * ------------------------------------------------------------------ */
@@ -445,6 +479,26 @@
     };
   }
 
+  /* bullet_impact: isabet noktası (weapon alanı genelde yoktur). */
+  function normalizeImpactEvent(raw) {
+    const actor = normalizeActor(raw, 'user', ['player']);
+    if (!actor.steamId) actor.steamId = normalizeSteamId(firstText(raw, ['steamid', 'player_steamid']));
+    if (!actor.name) actor.name = firstText(raw, ['name', 'player_name']);
+    const weapon = normalizeWeapon(firstText(raw, ['weapon', 'weapon_name', 'weapon_itemid']));
+    return {
+      type: 'impact',
+      tick: num(raw?.tick) ?? 0,
+      round: null,
+      roundIndex: -1,
+      actorSteamId: actor.steamId,
+      actorName: actor.name,
+      weapon: weapon.key === 'unknown' ? '' : weapon.key,
+      weaponLabel: weapon.key === 'unknown' ? '' : weapon.label,
+      position: actor.position || eventPosition(raw),
+      raw
+    };
+  }
+
   function normalizeBlindEvent(raw) {
     const victim = normalizeActor(raw, 'user', ['player']);
     if (!victim.steamId) victim.steamId = normalizeSteamId(firstText(raw, ['steamid', 'player_steamid']));
@@ -487,6 +541,43 @@
       actorSteamId: actor.steamId,
       actorName: actor.name,
       position: actor.position || eventPosition(raw),
+      raw
+    };
+  }
+
+  /* Bağlam gerektirmeyen tek aktörlü eventler (disconnect, spawn, team change...). */
+  function normalizeActorEvent(raw, type) {
+    const actor = normalizeActor(raw, 'user', ['player']);
+    if (!actor.steamId) actor.steamId = normalizeSteamId(firstText(raw, ['steamid', 'player_steamid']));
+    if (!actor.name) actor.name = firstText(raw, ['name', 'player_name']);
+    return {
+      type,
+      tick: num(raw?.tick) ?? 0,
+      round: null,
+      roundIndex: -1,
+      actorSteamId: actor.steamId,
+      actorName: actor.name,
+      position: actor.position || eventPosition(raw),
+      raw
+    };
+  }
+
+  function normalizePurchaseEvent(raw) {
+    const actor = normalizeActor(raw, 'user', ['player']);
+    if (!actor.steamId) actor.steamId = normalizeSteamId(firstText(raw, ['steamid', 'player_steamid']));
+    if (!actor.name) actor.name = firstText(raw, ['name', 'player_name']);
+    const weapon = normalizeWeapon(firstText(raw, ['weapon', 'item_name', 'itemid']));
+    return {
+      type: 'purchase',
+      tick: num(raw?.tick) ?? 0,
+      round: null,
+      roundIndex: -1,
+      actorSteamId: actor.steamId,
+      actorName: actor.name,
+      weapon: weapon.key,
+      weaponLabel: weapon.label,
+      cost: num(firstValue(raw, ['cost', 'price'])) ?? 0,
+      team: num(firstValue(raw, ['team', 'team_num'])) ?? 0,
       raw
     };
   }
@@ -558,6 +649,13 @@
     normalizeUtilityEvent,
     normalizeBlindEvent,
     normalizeBombEvent,
+    normalizePurchaseEvent,
+    normalizeActorEvent,
+    normalizeImpactEvent,
+    utilityDamageKind,
+    isUtilityWeapon,
+    isUtilityThrowEvent,
+    isUtilityEndEvent,
     roundEndReasonLabel,
     sideFromTeamNumber,
     teamNumberFromSide

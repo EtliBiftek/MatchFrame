@@ -11,6 +11,7 @@ test('scriptler hatasız yüklenir ve MF namespace kurulur', async () => {
   assert.ok(ui.MF.filters, 'filters yok');
   assert.ok(ui.MF.navigation, 'navigation yok');
   assert.ok(ui.MF.analysis?.buildMatchModel, 'analiz modülü yok');
+  assert.ok(ui.MF.analysis?.buildUtilityModel, 'utility analiz modülü yok');
   ui.close();
 });
 
@@ -70,11 +71,17 @@ test('analysis ekranı özet, takım, oyuncu ve round bölümlerini çizer', asy
 
   const view = ui.document.getElementById('view-analysis');
   const blocks = [...view.querySelectorAll('.block-title')].map((node) => node.textContent);
-  assert.deepEqual(blocks, ['Özet', 'Takım karşılaştırması', 'Oyuncular', 'Round listesi', 'Maç olayları']);
+  assert.deepEqual(blocks, [
+    'Özet', 'Takım karşılaştırması', 'Oyuncular', 'Round listesi', 'Maç olayları',
+    'Ekonomi', 'Taraf dağılımı (T / CT)', 'Round momentum', 'Isı haritası', 'Opening düellolar',
+    'Koçluk notları'
+  ]);
 
-  const cards = [...view.querySelectorAll('.stat-card')].map((node) => node.querySelector('.stat-label').textContent);
+  // Özet bloğundaki kartlar (diğer blokların kartları ayrı sayılır)
+  const summary = view.querySelector('.block');
+  const cards = [...summary.querySelectorAll('.stat-card')].map((node) => node.querySelector('.stat-label').textContent);
   assert.deepEqual(cards, ['Round', 'Toplam kill', 'Toplam ölüm', 'Plant', 'Defuse', 'Maç süresi']);
-  assert.equal(view.querySelectorAll('.stat-card')[0].querySelector('.stat-value').textContent, '8');
+  assert.equal(summary.querySelectorAll('.stat-card')[0].querySelector('.stat-value').textContent, '8');
 
   // Takım tablosu: 2 takım + başlık satırı
   const teamRows = view.querySelectorAll('.block:nth-of-type(2) tbody tr');
@@ -104,9 +111,9 @@ test('round filtresi analiz içeriğini daraltır', async () => {
   assert.equal(ui.MF.filters.get().round, 3);
 
   const view = ui.document.getElementById('view-analysis');
-  const cards = [...view.querySelectorAll('.stat-card')].map((node) => node.querySelector('.stat-label').textContent);
+  const cards = [...view.querySelector('.block').querySelectorAll('.stat-card')].map((node) => node.querySelector('.stat-label').textContent);
   assert.deepEqual(cards, ['Kazanan', 'Round süresi', 'Kill', 'Bomba', 'Clutch', 'İlk kill']);
-  const clutchCard = view.querySelectorAll('.stat-card')[4];
+  const clutchCard = view.querySelector('.block').querySelectorAll('.stat-card')[4];
   assert.equal(clutchCard.querySelector('.stat-value').textContent, '1v3');
   assert.equal(clutchCard.querySelector('.stat-hint').textContent, 'kazanıldı');
 
@@ -184,14 +191,19 @@ test('utility ekranı mevcut veriden özet üretir, aim ekranı veri durumunu li
 
   ui.go('utility');
   const utilityView = ui.document.getElementById('view-utility');
-  assert.equal(utilityView.querySelectorAll('.stat-card').length, 6);
+  assert.ok(utilityView.querySelectorAll('.stat-card').length >= 6, 'utility kartları eksik');
+  assert.ok(utilityView.querySelector('canvas.radar-canvas'), 'radar canvas yok');
   const utilityRows = utilityView.querySelectorAll('.data-table tbody tr');
   assert.ok(utilityRows.length >= 4, 'utility tablosu boş');
 
   ui.go('aim');
   const aimView = ui.document.getElementById('view-aim');
-  const statuses = [...aimView.querySelectorAll('.data-table tbody tr')].map((row) => row.textContent);
-  assert.ok(statuses.some((row) => /player_hurt|weapon_fire|bullet_impact/.test(row)));
+  assert.ok(aimView.querySelectorAll('.stat-card').length >= 5, 'aim kartları eksik');
+  const tables = [...aimView.querySelectorAll('.data-table')];
+  assert.ok(tables.length >= 2, 'silah ve oyuncu tablosu yok');
+  assert.ok(tables[0].querySelectorAll('tbody tr').length >= 2, 'silah tablosu boş');
+  // Eksik veri (bullet_impact) doğruluk sınırları bloğunda açıklanır
+  assert.match(aimView.textContent, /bullet_impact|Visibility/);
   ui.close();
 });
 

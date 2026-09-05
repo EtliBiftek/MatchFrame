@@ -100,6 +100,17 @@ function loadScript(window, src) {
   });
 }
 
+/* Test düşerse pencere kapanmayabilir; süreç çıkışında hepsini kapat. */
+const openWindows = new Set();
+process.on('exit', () => {
+  for (const window of openWindows) {
+    try {
+      window.close();
+    } catch (_) { /* yoksay */ }
+  }
+  openWindows.clear();
+});
+
 export async function boot(options = {}) {
   const indexPath = path.join(UI_DIR, 'index.html');
   const html = fs.readFileSync(indexPath, 'utf8');
@@ -122,6 +133,7 @@ export async function boot(options = {}) {
     virtualConsole
   });
   const { window } = dom;
+  openWindows.add(window);
   const ipcCalls = installStubs(window);
 
   const loadResults = [];
@@ -187,6 +199,7 @@ export async function boot(options = {}) {
 
     close() {
       window.close();
+      openWindows.delete(window);
     }
   };
 

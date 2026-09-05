@@ -24,6 +24,7 @@ function makeDemo(options = {}) {
   const players = playerSpecs.map((spec, index) => ({
     name: spec.name || `player${index + 1}`,
     steamid: String(spec.steamid || 76561198000000001n + BigInt(index)),
+    _inventory: spec.inventory || [],
     team_number: TEAM_NUMBER[spec.side] || 0,
     team_name: spec.team_name || '',
     _side: spec.side,
@@ -49,6 +50,7 @@ function makeDemo(options = {}) {
     explosions: [],
     damage: options.omitDamage ? undefined : [],
     shots: options.omitShots ? undefined : [],
+    impacts: options.omitImpacts ? undefined : [],
     blinds: options.omitBlinds ? undefined : [],
     freezeEnds: [],
     bomb: null,
@@ -85,10 +87,13 @@ function makeDemo(options = {}) {
     },
 
     addRound(config = {}) {
-      const number = demo.roundMeta.length + 1;
-      const startTick = config.startTick != null ? config.startTick : (demo.roundMeta.at(-1)?.endTick ?? 0) + 64;
+      const number = demo.roundStarts.length + 1;
+      const startTick = config.startTick != null ? config.startTick : (computeRoundMeta(demo).at(-1)?.endTick ?? 0) + 64;
       const endTick = config.endTick != null ? config.endTick : startTick + (config.length ?? 1600);
-      demo.roundMeta.push({ number, startTick, endTick });
+      if (options.freezeTime != null || config.freezeTime != null) {
+        const freezeTick = startTick + Number(config.freezeTime ?? options.freezeTime);
+        demo.freezeEnds.push({ tick: freezeTick, total_rounds_played: number - 1 });
+      }
       demo.roundStarts.push({ tick: startTick, total_rounds_played: number - 1, is_warmup_period: false, round_start_time: number * 2 });
       demo.maxTick = Math.max(demo.maxTick, endTick);
       demo.rounds.push({ tick: endTick, total_rounds_played: number });
@@ -97,6 +102,8 @@ function makeDemo(options = {}) {
         last.winner = TEAM_NUMBER[config.winner] || 0;
         last.reason = config.reason != null ? config.reason : 0;
       }
+      // Round meta worker'da (buildRoundMeta) üretilir; fixture da aynı şekli taklit eder.
+      demo.roundMeta = computeRoundMeta(demo);
       return number;
     },
 
@@ -122,8 +129,14 @@ function makeDemo(options = {}) {
         total_rounds_played: config.round != null ? config.round - 1 : undefined,
         attacker_steamid: attacker.steamid,
         attacker_name: attacker.name,
+        attacker_X: config.attackerX != null ? config.attackerX : (config.x != null ? config.x - 200 : 0),
+        attacker_Y: config.attackerY != null ? config.attackerY : (config.y != null ? config.y : 0),
+        attacker_Z: 0,
         user_steamid: victim.steamid,
         user_name: victim.name,
+        user_X: config.x != null ? config.x : 0,
+        user_Y: config.y != null ? config.y : 0,
+        user_Z: 0,
         assister_steamid: assister.steamid || undefined,
         assister_name: assister.name || undefined,
         assistedflash: config.assistedflash ? true : undefined,
@@ -175,6 +188,50 @@ function makeDemo(options = {}) {
       return api;
     },
 
+    addImpact(config) {
+      if (!demo.impacts) return api;
+      const actor = api.actor(config.player || config.attacker);
+      demo.impacts.push({
+        tick: config.tick,
+        user_steamid: actor.steamid,
+        user_name: actor.name,
+        X: config.x != null ? config.x : 0,
+        Y: config.y != null ? config.y : 0,
+        Z: config.z != null ? config.z : 0
+      });
+      return api;
+    },
+
+    addPurchase(config) {
+      const actor = api.actor(config.player);
+      demo.purchases = demo.purchases || [];
+      demo.purchases.push({
+        tick: config.tick,
+        user_steamid: actor.steamid,
+        user_name: actor.name,
+        weapon: config.weapon || 'ak47',
+        cost: config.cost != null ? config.cost : 2700,
+        team: config.team != null ? config.team : TEAM_NUMBER[api.sideOf(
+          api.players.find((candidate) => candidate.steamid === actor.steamid) || {},
+          config.round || 1
+        )] || 0,
+        total_rounds_played: config.round != null ? config.round - 1 : undefined
+      });
+      return api;
+    },
+
+    addDisconnect(config) {
+      const actor = api.actor(config.player);
+      demo.disconnects = demo.disconnects || [];
+      demo.disconnects.push({
+        tick: config.tick,
+        user_steamid: actor.steamid,
+        user_name: actor.name,
+        reason: config.reason || 'disconnect'
+      });
+      return api;
+    },
+
     addPlant(config) {
       const actor = api.actor(config.player);
       const event = { tick: config.tick, user_steamid: actor.steamid, user_name: actor.name, user_X: 500, user_Y: 500, user_Z: 0 };
@@ -219,23 +276,18 @@ function makeDemo(options = {}) {
     },
 
     addBlind(config) {
-      if (!demo.blinds) {
-        demo.utility.playerBlinds.push({
-          tick: config.tick,
-          user_steamid: api.actor(config.victim).steamid,
-          user_name: api.actor(config.victim).name,
-          blind_duration: config.duration != null ? config.duration : 2.1
-        });
-        return api;
-      }
-      demo.blinds.push({
+      const blind = {
         tick: config.tick,
-        attacker_steamid: api.actor(config.attacker).steamid,
-        attacker_name: api.actor(config.attacker).name,
         user_steamid: api.actor(config.victim).steamid,
         user_name: api.actor(config.victim).name,
         blind_duration: config.duration != null ? config.duration : 2.1
-      });
+      };
+      if (!config.noAttacker) {
+        blind.attacker_steamid = api.actor(config.attacker).steamid;
+        blind.attacker_name = api.actor(config.attacker).name;
+      }
+      if (!demo.blinds) demo.utility.playerBlinds.push(blind);
+      else demo.blinds.push(blind);
       return api;
     },
 
@@ -270,7 +322,7 @@ function makeDemo(options = {}) {
               active_weapon_ammo: 30,
               total_ammo_left: 90,
               flash_duration: 0,
-              inventory: [],
+              inventory: player._inventory || [],
               has_c4: false
             }))
           });
@@ -280,39 +332,100 @@ function makeDemo(options = {}) {
       return api;
     },
 
+    /*
+     * Oyuncunun konum/kamera hareketini keyframe'lerle tanımlar (aim testleri için).
+     * setTrack(player, [{ tick, x, y, z, yaw, pitch }, ...])
+     */
+    setTrack(player, keyframes = []) {
+      const steamid = api.actor(player).steamid;
+      const target = api.players.find((candidate) => candidate.steamid === steamid);
+      if (target) target._track = [...keyframes].sort((a, b) => a.tick - b.tick);
+      return api;
+    },
+
+    /* Track'ten verilen tick için ara değer (linear interpolation). */
+    sampleTrack(player, tick) {
+      const track = player?._track;
+      if (!track || !track.length) return null;
+      if (tick <= track[0].tick) return { ...track[0] };
+      const last = track[track.length - 1];
+      if (tick >= last.tick) return { ...last };
+      for (let index = 1; index < track.length; index += 1) {
+        const previous = track[index - 1];
+        const next = track[index];
+        if (tick >= previous.tick && tick <= next.tick) {
+          const ratio = (tick - previous.tick) / ((next.tick - previous.tick) || 1);
+          const mix = (key, fallback = 0) => {
+            const from = previous[key] != null ? previous[key] : fallback;
+            const to = next[key] != null ? next[key] : from;
+            return from + (to - from) * ratio;
+          };
+          return {
+            tick,
+            x: mix('x'), y: mix('y'), z: mix('z'),
+            yaw: mix('yaw'), pitch: mix('pitch')
+          };
+        }
+      }
+      return { ...last };
+    },
+
+    /* Sadece analiz için gereken alanları taşır; fixture boyutunu küçük tutar. */
+    slimPlayer(player, index, state) {
+      return {
+        steamid: player.steamid,
+        name: player.name,
+        X: state.X,
+        Y: state.Y,
+        Z: state.Z,
+        yaw: state.yaw,
+        pitch: state.pitch,
+        fov: 90,
+        health: state.health,
+        is_alive: state.is_alive,
+        team_num: state.team_num,
+        inventory: state.inventory,
+        has_c4: state.has_c4
+      };
+    },
+
     /* Tick state'ini (radar frame'leri) üretir. Taraf tespiti bu veriden yapılır. */
-    buildFrames(step = 8) {
+    buildFrames(step = 8, options = {}) {
       const frames = [];
+      if (!demo.roundMeta.length) demo.roundMeta = computeRoundMeta(demo);
       if (!demo.roundMeta.length) return api;
       const lastTick = demo.maxTick;
       for (let tick = 0; tick <= lastTick; tick += step) {
         const meta = [...demo.roundMeta].reverse().find((round) => tick >= round.startTick) || demo.roundMeta[0];
-        const players = api.players.map((player, index) => ({
-          steamid: player.steamid,
-          name: player.name,
-          X: -800 + index * 160,
-          Y: -400 + (index % 3) * 120,
-          Z: 0,
-          pitch: 0,
-          yaw: (index * 37) % 360,
-          fov: 90,
-          duck_amount: 0,
-          in_crouch: false,
-          health: 100,
-          armor: 100,
-          is_alive: true,
-          team_num: TEAM_NUMBER[api.sideOf(player, meta.number)] || 0,
-          team_name: '',
-          team_clan_name: '',
-          player_color: '',
-          active_weapon_name: 'weapon_ak47',
-          active_weapon_ammo: 30,
-          total_ammo_left: 90,
-          flash_duration: 0,
-          inventory: [],
-          has_c4: false
-        }));
-        frames.push({ tick, players });
+        const players = api.players.map((player, index) => {
+          const sampled = api.sampleTrack(player, tick);
+          return {
+            steamid: player.steamid,
+            name: player.name,
+            X: sampled ? sampled.x : -800 + index * 160,
+            Y: sampled ? sampled.y : -400 + (index % 3) * 120,
+            Z: sampled ? sampled.z : 0,
+            pitch: sampled ? sampled.pitch : 0,
+            yaw: sampled ? sampled.yaw : (index * 37) % 360,
+            fov: 90,
+            duck_amount: 0,
+            in_crouch: false,
+            health: 100,
+            armor: 100,
+            is_alive: true,
+            team_num: TEAM_NUMBER[api.sideOf(player, meta.number)] || 0,
+            team_name: '',
+            team_clan_name: '',
+            player_color: '',
+            active_weapon_name: 'weapon_ak47',
+            active_weapon_ammo: 30,
+            total_ammo_left: 90,
+            flash_duration: 0,
+            inventory: player._inventory || [],
+            has_c4: false
+          };
+        });
+        frames.push({ tick, players: options.slim ? players.map((state, i) => api.slimPlayer(api.players[i], i, state)) : players });
       }
       demo.frames = frames;
       return api;
@@ -320,6 +433,8 @@ function makeDemo(options = {}) {
 
     finalize() {
       demo.durationSeconds = demo.maxTick / tickRate;
+      demo.purchases = demo.purchases || [];
+      demo.disconnects = demo.disconnects || [];
       if (!demo.frames.length) api.buildFrames();
       demo.bomb = {
         plants: demo.plants,
@@ -333,6 +448,28 @@ function makeDemo(options = {}) {
   };
 
   return api;
+}
+
+function computeRoundMeta(demo) {
+  const starts = [...demo.roundStarts]
+    .map((event) => ({ tick: Number(event.tick) || 0, played: Number(event.total_rounds_played) }))
+    .sort((a, b) => a.tick - b.tick);
+  const ends = [...demo.rounds].map((event) => Number(event.tick) || 0).filter((tick) => tick > 0).sort((a, b) => a - b);
+  const freeze = [...demo.freezeEnds].map((event) => Number(event.tick) || 0).filter((tick) => tick > 0).sort((a, b) => a - b);
+
+  return starts.map((start, index) => {
+    const nextStart = starts[index + 1]?.tick;
+    const matchingEnd = ends.find((end) => end >= start.tick && (nextStart == null || end < nextStart));
+    const endTick = matchingEnd ?? (nextStart != null ? Math.max(start.tick, nextStart - 1) : demo.maxTick);
+    const upper = nextStart != null ? nextStart : endTick + 1;
+    const freezeEndTick = freeze.find((tick) => tick > start.tick && tick < upper) ?? null;
+    return {
+      number: Number.isFinite(start.played) ? start.played + 1 : index + 1,
+      startTick: start.tick,
+      endTick: Math.max(start.tick, endTick),
+      freezeEndTick
+    };
+  });
 }
 
 module.exports = { makeDemo, defaultPlayers, TEAM_NUMBER };
