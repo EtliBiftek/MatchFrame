@@ -75,6 +75,7 @@ jobs:
           node --check ui/components/empty-state.js
           node --check ui/components/filters.js
           node --check ui/components/event-list.js
+          node --check ui/components/radar.js
           node --check ui/views/replay-view.js
           node --check ui/views/analysis-view.js
           node --check ui/views/aim-view.js

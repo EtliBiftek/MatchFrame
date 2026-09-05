@@ -25,6 +25,7 @@ ui/
     filter-store.js          ekranlar arası paylaşılan oyuncu/round/silah filtresi
   components/
     dom.js, stat-card.js, data-table.js, empty-state.js, filters.js, event-list.js
+    radar.js                canvas radar overlay (utility konumları)
   views/
     replay-view.js           mevcut replay akışını sarmalar + olaydan replay'e atlama
     analysis-view.js         Analysis MVP
@@ -38,6 +39,7 @@ test/
   analysis-common.test.mjs
   match-analysis.test.mjs
   utility-analysis.test.mjs
+  utility-view.test.mjs      jsdom ile utility ekranı entegrasyonu
   demo-worker.test.cjs
   dom-navigation.test.mjs
 
@@ -56,14 +58,14 @@ dev/preview.html             fixture veriyle çalışan geliştirme önizlemesi
 | 2 | Ortak analiz modeli | ✅ Tamam | `buildMatchModel`, event normalizasyonu, availability, fixture testleri |
 | 3 | Analysis MVP | ✅ Tamam | Özet kartları, takım karşılaştırması, oyuncu tablosu, round listesi, replay'e git |
 | 4 | Parser genişletmesi | ✅ Tamam | Yukarıdakilere ek olarak `item_purchase`, `player_spawn`, `player_team`, `player_disconnect`, `begin_new_match` ve `roundMeta[].freezeEndTick` eklendi |
-| 5 | Utility MVP | 🟡 Kısmen | Hesap katmanı (`ui/analysis/utility-analysis.js`) + 13 test hazır. Eksik: Utility ekranı UI'si, radar overlay, replay bağlantısı (Oturum B) |
-| 6 | Aim MVP | ⬜ Bekliyor | Utility bitmeden başlanmamalı |
+| 5 | Utility MVP | ✅ Tamam | `ui/analysis/utility-analysis.js` + utility ekranı (kartlar, radar overlay, oyuncu tablosu, olay listesi, replay bağlantısı) |
+| 6 | Aim MVP | ⬜ Sıradaki | Utility bitti; `aim-analysis.js` + aim ekranı + duel listesi |
 | 7 | Gelişmiş analiz | ⬜ Bekliyor | Heatmap, reaction-time tahmini, ekonomi, Ruby coaching |
 | 8 | Rust'a taşıma | ⬜ Bekliyor | Formüller doğrulandıktan sonra |
 
 Durum: Aşama 1-4 `main`'de, Windows build + release hattı çalışıyor
-(`v0.7.0-alpha.1-build.121`). Aşama 5'in hesap katmanı bu dalda tamamlandı (67 test yeşil);
-UI katmanı `docs/ROADMAP-REMAINING.md` → Oturum B'de gelecek.
+(`v0.7.0-alpha.1-build.121`). Aşama 5 (hesap katmanı + ekran) bu dalda tamamlandı;
+78 test yeşil. Sıradaki: Aşama 6 Aim (`docs/ROADMAP-REMAINING.md` → Oturum C).
 
 ## Bu turda yapılanlar
 
@@ -79,7 +81,7 @@ UI katmanı `docs/ROADMAP-REMAINING.md` → Oturum B'de gelecek.
 - **Testler**: 51 test (saf analiz, worker, jsdom entegrasyonu). `npm test`.
 - **Önizleme**: `npm run preview` → `dev/preview.html` (Electron gerekmez, fixture veriyle çalışır).
 
-## Bu turda yapılanlar (Aşama 4 kalanı + Utility hesap katmanı)
+## Bu turda yapılanlar (Aşama 4 kalanı + Aşama 5)
 
 - **Parser**: `item_purchase`, `player_spawn`, `player_team`, `player_disconnect`,
   `begin_new_match` eventleri `safeEventVariants` ile eklendi; `buildRoundMeta` artık her round
@@ -95,18 +97,26 @@ UI katmanı `docs/ROADMAP-REMAINING.md` → Oturum B'de gelecek.
   round/takım dağılımı ve güven (confidence) sınıflandırması.
 - **Fixture**: `test/fixtures/utility-heavy.json` (3 round, 6 oyuncu, 15 utility atışı,
   1 fallback körlük, 1 disconnect, ekonomi kayıtları, frame inventory).
-- **Testler**: 67 test (13 utility + 3 worker).
+- **Utility ekranı**: `ui/views/utility-view.js` — tür/round/oyuncu/taraf filtreleri, özet
+  kartları (atılan utility, kör edilen rakip/takım arkadaşı, boşa flash, utility hasarı,
+  ortalama smoke süresi), `ui/components/radar.js` canvas overlay'i (konum + takım rengi,
+  tıklayınca replay), oyuncu tablosu ve olay listesi (her satırda **Replay**).
+  Round seçiliyken zaman çizelgesi (slider) ile utility sırası izlenebilir.
+- **Eksik veri davranışı**: `player_blind` yoksa körlük sütunları/kartları, `player_hurt`
+  yoksa hasar sütunları, tick state yoksa envanter sütunları gizlenir; sebebi "Veri durumu"
+  bloğunda yazılır. Smoke süresi expire olmadan **tahmin edilmez** (kartta "—").
+- **Testler**: 78 test (13 utility hesap + 11 utility ekranı + 3 worker + 51 mevcut).
 
 ## Sonraki oturum için giriş noktaları
 
-1. **Utility ekranı UI (Oturum B)**: `ui/views/utility-view.js` — özet kartları, oyuncu tablosu,
-   radar overlay (smoke/molotov/flash/he detonasyon noktaları), round filtresi ve
-   event satırından `MF.replay.jumpTo(tick, { steamId })` ile replay'e atlama.
-2. **Aim MVP (Aşama 6 / Oturum C)**: yalnızca Utility UI bittikten sonra; `weapon_fire` +
-   `bullet_impact` + `player_hurt` eşleştirmesiyle crosshair açı hatası, potential reaction
-   time, duel listesi.
-3. **Gelişmiş analiz (Oturum D)**: ekonomi ekranı (round bazlı spend/buy), side split, momentum,
-   heatmap.
+1. **Aim MVP (Aşama 6 / Oturum C)**: `ui/analysis/aim-analysis.js` + aim ekranı;
+   `weapon_fire` + `bullet_impact` + `player_hurt` eşleştirmesiyle crosshair açı hatası,
+   potential reaction time (visibility doğrulaması yok → etikette belirtilir), duel listesi
+   ve heatmap.
+2. **Gelişmiş analiz (Oturum D)**: ekonomi ekranı (round bazlı spend/buy), side split,
+   momentum grafiği, maç heatmap'i.
+3. **Ruby coaching (Oturum E)**: `backend/analytics/analyze.rb` çıktısının Analysis
+   ekranında gösterilmesi.
 
 ## Test komutları
 

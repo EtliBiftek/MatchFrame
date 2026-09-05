@@ -97,3 +97,15 @@
   .stat-grid { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); }
   .table-wrap { max-height: 340px; }
 }
+
+/* --- Radar (utility overlay) --- */
+.radar-wrap { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.radar { display: flex; flex-direction: column; gap: 6px; }
+.radar-canvas { width: 320px; height: 320px; border: 1px solid var(--border); border-radius: 8px; background: #101014; }
+.radar-legend { display: flex; flex-wrap: wrap; gap: 10px; }
+.radar-legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; color: var(--muted); }
+.radar-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+.radar-note { font-size: 9px; color: var(--subtle); }
+.radar-caption { font-size: 9px; color: var(--subtle); }
+.radar-timeline { min-width: 180px; }
+.filter-range { width: 140px; accent-color: #8ea2b8; }

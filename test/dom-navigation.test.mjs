@@ -185,7 +185,8 @@ test('utility ekranı mevcut veriden özet üretir, aim ekranı veri durumunu li
 
   ui.go('utility');
   const utilityView = ui.document.getElementById('view-utility');
-  assert.equal(utilityView.querySelectorAll('.stat-card').length, 6);
+  assert.ok(utilityView.querySelectorAll('.stat-card').length >= 6, 'utility kartları eksik');
+  assert.ok(utilityView.querySelector('canvas.radar-canvas'), 'radar canvas yok');
   const utilityRows = utilityView.querySelectorAll('.data-table tbody tr');
   assert.ok(utilityRows.length >= 4, 'utility tablosu boş');
 

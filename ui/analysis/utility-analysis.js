@@ -136,7 +136,11 @@
       players: [],
       totals: {
         thrown: emptyCounts(),
-        flash: { thrown: 0, enemiesBlinded: 0, teammatesBlinded: 0, blindSeconds: 0, assists: 0, wasted: 0 },
+        flash: {
+          thrown: 0, enemiesBlinded: 0, teammatesBlinded: 0, blindSeconds: 0,
+          enemiesBlindSeconds: 0, teammateBlindSeconds: 0, assists: 0, wasted: 0,
+          attributedByFallback: 0, enemiesPerFlash: null, wastedRate: null
+        },
         smoke: { thrown: 0, activeSeconds: 0, expireSecondsKnown: 0, expireSecondsUnknown: 0, assists: 0 },
         molotov: { thrown: 0, burnSeconds: 0, damage: 0, playersBurned: 0 },
         he: { thrown: 0, damage: 0, playersHit: 0, wasted: 0, playersPerThrow: null, avgDamagePerVictim: null }
@@ -554,8 +558,11 @@
       totals.flash.thrown += row.flash.thrown;
       totals.flash.enemiesBlinded += row.flash.enemiesBlinded;
       totals.flash.teammatesBlinded += row.flash.teammatesBlinded;
+      totals.flash.enemiesBlindSeconds += row.flash.enemiesBlindSeconds;
+      totals.flash.teammateBlindSeconds += row.flash.teammateBlindSeconds;
       totals.flash.blindSeconds += row.flash.blindSeconds;
       totals.flash.wasted += row.flash.wasted;
+      totals.flash.attributedByFallback += row.flash.attributedByFallback;
       totals.smoke.thrown += row.smoke.thrown;
       totals.smoke.activeSeconds += row.smoke.activeSeconds;
       totals.smoke.expireSecondsKnown += row.smoke.expireSecondsKnown;
