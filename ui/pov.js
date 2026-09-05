@@ -13,6 +13,9 @@
   let textureCount = 0;
   let resizePending = true;
   let contextLost = false;
+  let sceneGeneration = 0;
+  let resizeObserver = null;
+  let removeEngineListeners = null;
 
   const style = document.createElement('style');
   style.textContent = `
@@ -72,6 +75,11 @@
   }
 
   function disposeEngineOnly() {
+    sceneGeneration++;
+    try { resizeObserver?.disconnect?.(); } catch (_) {}
+    resizeObserver = null;
+    try { removeEngineListeners?.(); } catch (_) {}
+    removeEngineListeners = null;
     try { engine?.stopRenderLoop?.(); } catch (_) {}
     try { scene?.dispose?.(); } catch (_) {}
     try { engine?.dispose?.(); } catch (_) {}
@@ -115,22 +123,40 @@
         }
       });
 
-      window.addEventListener('resize', () => { resizePending = true; });
-      const viewport = document.getElementById('viewport');
-      if (viewport) new ResizeObserver(() => { resizePending = true; }).observe(viewport);
-
-      canvas.addEventListener('webglcontextlost', (event) => {
+      const onWindowResize = () => { resizePending = true; };
+      const onContextLost = (event) => {
         event.preventDefault();
         contextLost = true;
         resizePending = true;
+        ready = false;
         console.warn('[MatchFrame POV] WebGL context lost');
-      }, false);
-      canvas.addEventListener('webglcontextrestored', () => {
+      };
+      const onContextRestored = () => {
+        // Babylon resources belonging to a very large imported map are not guaranteed to survive
+        // a GPU reset. Recreate the engine and reload the already-sanitized local cache instead of
+        // rendering with partially restored buffers.
+        const recoveryUrl = loadedUrl;
         contextLost = false;
-        resizePending = true;
-        syncRenderSize(true);
-        console.info('[MatchFrame POV] WebGL context restored');
-      }, false);
+        loadedUrl = null;
+        disposeEngineOnly();
+        console.info('[MatchFrame POV] WebGL context restored; rebuilding renderer');
+        if (recoveryUrl) load(recoveryUrl).then(() => {
+          window.dispatchEvent(new CustomEvent('matchframe:pov-restored'));
+        }).catch((error) => console.error('[MatchFrame POV recovery]', error));
+      };
+      window.addEventListener('resize', onWindowResize);
+      const viewport = document.getElementById('viewport');
+      if (viewport) {
+        resizeObserver = new ResizeObserver(() => { resizePending = true; });
+        resizeObserver.observe(viewport);
+      }
+      canvas.addEventListener('webglcontextlost', onContextLost, false);
+      canvas.addEventListener('webglcontextrestored', onContextRestored, false);
+      removeEngineListeners = () => {
+        window.removeEventListener('resize', onWindowResize);
+        canvas.removeEventListener('webglcontextlost', onContextLost, false);
+        canvas.removeEventListener('webglcontextrestored', onContextRestored, false);
+      };
     }
 
     if (scene) scene.dispose();
@@ -244,9 +270,13 @@
   async function load(url) {
     if (ready && loadedUrl === url) return;
     const target = createScene();
+    const generation = ++sceneGeneration;
     suppressBabylonLoadingUi();
     try {
       await BABYLON.SceneLoader.AppendAsync('', url, target, undefined, '.glb');
+      if (generation !== sceneGeneration || target !== scene || target.isDisposed) {
+        throw new Error('POV yüklemesi yeni bir demo tarafından iptal edildi.');
+      }
       suppressBabylonLoadingUi();
       for (const item of [...target.cameras]) {
         if (item !== camera) item.dispose();

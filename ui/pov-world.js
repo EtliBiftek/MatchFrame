@@ -5,6 +5,8 @@
   let bombMesh = null;
   let viewModelRoot = null;
   let viewModelKey = '';
+  let worldDisabledForScene = false;
+  let lastWorldError = '';
   const materialCache = new Map();
 
   const PLAYER_COLORS = {
@@ -21,12 +23,15 @@
 
   function ensureSceneState() {
     const current = scene();
-    if (!current || current === sceneRef) return current;
+    if (!current || current.isDisposed) return null;
+    if (current === sceneRef) return current;
     actorMeshes = new Map();
     utilityMeshes = [];
     bombMesh = null;
     viewModelRoot = null;
     viewModelKey = '';
+    worldDisabledForScene = false;
+    lastWorldError = '';
     materialCache.clear();
     sceneRef = current;
     return current;
@@ -309,13 +314,24 @@
   }
 
   function updateWorld() {
-    if (viewMode !== 'pov' || !window.matchframePov?.isReady?.()) return;
+    if (worldDisabledForScene || viewMode !== 'pov' || !window.matchframePov?.isReady?.()) return;
     const frame = nearestFrame(currentTick);
     if (!frame) return;
-    updateActors(frame);
-    updateBomb();
-    updateUtilities();
-    updateViewModel(frame);
+    try {
+      updateActors(frame);
+      updateBomb();
+      updateUtilities();
+      updateViewModel(frame);
+    } catch (error) {
+      // Overlay geometry is optional. Never let one unsupported Babylon primitive/material stop
+      // the global playback requestAnimationFrame loop or take the renderer down with the map.
+      worldDisabledForScene = true;
+      const message = String(error?.stack || error?.message || error);
+      if (message !== lastWorldError) {
+        lastWorldError = message;
+        console.error('[MatchFrame POV world overlay disabled]', error);
+      }
+    }
   }
 
   const previousUpdatePovCamera = updatePovCamera;

@@ -197,6 +197,12 @@
     }, false);
   }
 
+  window.addEventListener('matchframe:pov-restored', () => {
+    contextLost = false;
+    window.matchframePov?.resize?.();
+    requestAnimationFrame(() => updatePovCamera());
+  });
+
   // A lightweight watchdog covers Electron/GPU resize/context edge cases without rebuilding the map.
   setInterval(() => {
     if (contextLost || viewMode !== 'pov' || !window.matchframePov?.isReady?.()) return;
