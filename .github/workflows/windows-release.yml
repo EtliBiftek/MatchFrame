@@ -3,6 +3,10 @@ name: Windows Build & Release
 on:
   push:
     branches: [main, 'arena/**']
+    # Dokümantasyon commit'leri release build'i tetiklemesin.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
@@ -61,6 +65,8 @@ jobs:
           node --check ui/enhance.js
           node --check ui/analysis/common.js
           node --check ui/analysis/match-analysis.js
+          node --check ui/analysis/utility-analysis.js
+          node --check ui/analysis/aim-analysis.js
           node --check ui/state/bus.js
           node --check ui/state/demo-store.js
           node --check ui/state/filter-store.js
@@ -70,6 +76,7 @@ jobs:
           node --check ui/components/empty-state.js
           node --check ui/components/filters.js
           node --check ui/components/event-list.js
+          node --check ui/components/radar.js
           node --check ui/views/replay-view.js
           node --check ui/views/analysis-view.js
           node --check ui/views/aim-view.js

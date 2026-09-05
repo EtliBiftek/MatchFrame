@@ -11,6 +11,7 @@ test('scriptler hatasız yüklenir ve MF namespace kurulur', async () => {
   assert.ok(ui.MF.filters, 'filters yok');
   assert.ok(ui.MF.navigation, 'navigation yok');
   assert.ok(ui.MF.analysis?.buildMatchModel, 'analiz modülü yok');
+  assert.ok(ui.MF.analysis?.buildUtilityModel, 'utility analiz modülü yok');
   ui.close();
 });
 
@@ -184,14 +185,19 @@ test('utility ekranı mevcut veriden özet üretir, aim ekranı veri durumunu li
 
   ui.go('utility');
   const utilityView = ui.document.getElementById('view-utility');
-  assert.equal(utilityView.querySelectorAll('.stat-card').length, 6);
+  assert.ok(utilityView.querySelectorAll('.stat-card').length >= 6, 'utility kartları eksik');
+  assert.ok(utilityView.querySelector('canvas.radar-canvas'), 'radar canvas yok');
   const utilityRows = utilityView.querySelectorAll('.data-table tbody tr');
   assert.ok(utilityRows.length >= 4, 'utility tablosu boş');
 
   ui.go('aim');
   const aimView = ui.document.getElementById('view-aim');
-  const statuses = [...aimView.querySelectorAll('.data-table tbody tr')].map((row) => row.textContent);
-  assert.ok(statuses.some((row) => /player_hurt|weapon_fire|bullet_impact/.test(row)));
+  assert.ok(aimView.querySelectorAll('.stat-card').length >= 5, 'aim kartları eksik');
+  const tables = [...aimView.querySelectorAll('.data-table')];
+  assert.ok(tables.length >= 2, 'silah ve oyuncu tablosu yok');
+  assert.ok(tables[0].querySelectorAll('tbody tr').length >= 2, 'silah tablosu boş');
+  // Eksik veri (bullet_impact) doğruluk sınırları bloğunda açıklanır
+  assert.match(aimView.textContent, /bullet_impact|Visibility/);
   ui.close();
 });
 

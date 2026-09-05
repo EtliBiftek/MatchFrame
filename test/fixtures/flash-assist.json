@@ -10,60 +10,70 @@
     {
       "name": "alpha",
       "steamid": "76561198000000001",
+      "_inventory": [],
       "team_number": 2,
       "team_name": ""
     },
     {
       "name": "bravo",
       "steamid": "76561198000000002",
+      "_inventory": [],
       "team_number": 2,
       "team_name": ""
     },
     {
       "name": "charlie",
       "steamid": "76561198000000003",
+      "_inventory": [],
       "team_number": 2,
       "team_name": ""
     },
     {
       "name": "delta",
       "steamid": "76561198000000004",
+      "_inventory": [],
       "team_number": 2,
       "team_name": ""
     },
     {
       "name": "echo",
       "steamid": "76561198000000005",
+      "_inventory": [],
       "team_number": 2,
       "team_name": ""
     },
     {
       "name": "foxtrot",
       "steamid": "76561198000000006",
+      "_inventory": [],
       "team_number": 3,
       "team_name": ""
     },
     {
       "name": "golf",
       "steamid": "76561198000000007",
+      "_inventory": [],
       "team_number": 3,
       "team_name": ""
     },
     {
       "name": "hotel",
       "steamid": "76561198000000008",
+      "_inventory": [],
       "team_number": 3,
       "team_name": ""
     },
     {
       "name": "india",
       "steamid": "76561198000000009",
+      "_inventory": [],
       "team_number": 3,
       "team_name": ""
     },
     {
       "name": "juliet",
       "steamid": "76561198000000010",
+      "_inventory": [],
       "team_number": 3,
       "team_name": ""
     }
@@ -86,7 +96,8 @@
     {
       "number": 1,
       "startTick": 500,
-      "endTick": 3000
+      "endTick": 3000,
+      "freezeEndTick": null
     }
   ],
   "deaths": [
@@ -136,30 +147,31 @@
   "explosions": [],
   "damage": [],
   "shots": [],
+  "impacts": [],
   "blinds": [
     {
       "tick": 640,
-      "attacker_steamid": "76561198000000002",
-      "attacker_name": "bravo",
       "user_steamid": "76561198000000007",
       "user_name": "golf",
-      "blind_duration": 2.6
+      "blind_duration": 2.6,
+      "attacker_steamid": "76561198000000002",
+      "attacker_name": "bravo"
     },
     {
       "tick": 660,
-      "attacker_steamid": "76561198000000002",
-      "attacker_name": "bravo",
       "user_steamid": "76561198000000008",
       "user_name": "hotel",
-      "blind_duration": 1.4
+      "blind_duration": 1.4,
+      "attacker_steamid": "76561198000000002",
+      "attacker_name": "bravo"
     },
     {
       "tick": 680,
-      "attacker_steamid": "76561198000000002",
-      "attacker_name": "bravo",
       "user_steamid": "76561198000000003",
       "user_name": "charlie",
-      "blind_duration": 3.2
+      "blind_duration": 3.2,
+      "attacker_steamid": "76561198000000002",
+      "attacker_name": "bravo"
     }
   ],
   "freezeEnds": [],
@@ -458,5 +470,7 @@
     "maxY": 2000
   },
   "cameraTracks": [],
-  "eventStatus": {}
+  "eventStatus": {},
+  "purchases": [],
+  "disconnects": []
 }

@@ -10,60 +10,70 @@
     {
       "name": "alpha",
       "steamid": "76561198000000001",
+      "_inventory": [],
       "team_number": 2,
       "team_name": "Team Anka"
     },
     {
       "name": "bravo",
       "steamid": "76561198000000002",
+      "_inventory": [],
       "team_number": 2,
       "team_name": "Team Anka"
     },
     {
       "name": "charlie",
       "steamid": "76561198000000003",
+      "_inventory": [],
       "team_number": 2,
       "team_name": "Team Anka"
     },
     {
       "name": "delta",
       "steamid": "76561198000000004",
+      "_inventory": [],
       "team_number": 2,
       "team_name": "Team Anka"
     },
     {
       "name": "echo",
       "steamid": "76561198000000005",
+      "_inventory": [],
       "team_number": 2,
       "team_name": "Team Anka"
     },
     {
       "name": "foxtrot",
       "steamid": "76561198000000006",
+      "_inventory": [],
       "team_number": 3,
       "team_name": "Team Yildiz"
     },
     {
       "name": "golf",
       "steamid": "76561198000000007",
+      "_inventory": [],
       "team_number": 3,
       "team_name": "Team Yildiz"
     },
     {
       "name": "hotel",
       "steamid": "76561198000000008",
+      "_inventory": [],
       "team_number": 3,
       "team_name": "Team Yildiz"
     },
     {
       "name": "india",
       "steamid": "76561198000000009",
+      "_inventory": [],
       "team_number": 3,
       "team_name": "Team Yildiz"
     },
     {
       "name": "juliet",
       "steamid": "76561198000000010",
+      "_inventory": [],
       "team_number": 3,
       "team_name": "Team Yildiz"
     }
@@ -172,42 +182,50 @@
     {
       "number": 1,
       "startTick": 1000,
-      "endTick": 3000
+      "endTick": 3000,
+      "freezeEndTick": null
     },
     {
       "number": 2,
       "startTick": 3200,
-      "endTick": 5200
+      "endTick": 5200,
+      "freezeEndTick": null
     },
     {
       "number": 3,
       "startTick": 5400,
-      "endTick": 7400
+      "endTick": 7400,
+      "freezeEndTick": null
     },
     {
       "number": 4,
       "startTick": 7600,
-      "endTick": 9600
+      "endTick": 9600,
+      "freezeEndTick": null
     },
     {
       "number": 5,
       "startTick": 9800,
-      "endTick": 11800
+      "endTick": 11800,
+      "freezeEndTick": null
     },
     {
       "number": 6,
       "startTick": 12000,
-      "endTick": 14000
+      "endTick": 14000,
+      "freezeEndTick": null
     },
     {
       "number": 7,
       "startTick": 14200,
-      "endTick": 16200
+      "endTick": 16200,
+      "freezeEndTick": null
     },
     {
       "number": 8,
       "startTick": 16400,
-      "endTick": 18400
+      "endTick": 18400,
+      "freezeEndTick": null
     }
   ],
   "deaths": [
@@ -5160,22 +5178,23 @@
       "silenced": false
     }
   ],
+  "impacts": [],
   "blinds": [
     {
       "tick": 1195,
-      "attacker_steamid": "76561198000000005",
-      "attacker_name": "echo",
       "user_steamid": "76561198000000006",
       "user_name": "foxtrot",
-      "blind_duration": 2.4
+      "blind_duration": 2.4,
+      "attacker_steamid": "76561198000000005",
+      "attacker_name": "echo"
     },
     {
       "tick": 16530,
-      "attacker_steamid": "76561198000000003",
-      "attacker_name": "charlie",
       "user_steamid": "76561198000000006",
       "user_name": "foxtrot",
-      "blind_duration": 3.1
+      "blind_duration": 3.1,
+      "attacker_steamid": "76561198000000003",
+      "attacker_name": "charlie"
     }
   ],
   "freezeEnds": [],
@@ -9389,5 +9408,7 @@
     "maxY": 2000
   },
   "cameraTracks": [],
-  "eventStatus": {}
+  "eventStatus": {},
+  "purchases": [],
+  "disconnects": []
 }

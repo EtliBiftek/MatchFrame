@@ -5,3 +5,6 @@ backend/target/
 .DS_Store
 .vscode/
 .idea/
+
+# Yerel paket/aktarım dosyaları
+*.bundle
