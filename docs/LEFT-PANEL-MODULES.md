@@ -6,6 +6,8 @@ devam edileceğini kaydeder.
 
 Hedef sürüm: **0.7.0-alpha.1**
 
+> Kalan aşamaların ayrıntılı uygulama planı: **[docs/ROADMAP-REMAINING.md](./ROADMAP-REMAINING.md)**
+
 ## Dosya düzeni
 
 ```text
@@ -56,6 +58,9 @@ dev/preview.html             fixture veriyle çalışan geliştirme önizlemesi
 | 6 | Aim MVP | ⬜ Bekliyor | Utility bitmeden başlanmamalı |
 | 7 | Gelişmiş analiz | ⬜ Bekliyor | Heatmap, reaction-time tahmini, ekonomi, Ruby coaching |
 | 8 | Rust'a taşıma | ⬜ Bekliyor | Formüller doğrulandıktan sonra |
+
+Durum: Aşama 1-3 `main`'de, Windows build + release hattı çalışıyor
+(`v0.7.0-alpha.1-build.121`). Kalan 5 aşama için yol haritası `docs/ROADMAP-REMAINING.md`.
 
 ## Bu turda yapılanlar
 

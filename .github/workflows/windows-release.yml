@@ -3,6 +3,10 @@ name: Windows Build & Release
 on:
   push:
     branches: [main, 'arena/**']
+    # Dokümantasyon commit'leri release build'i tetiklemesin.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
