@@ -19,6 +19,7 @@ ui/
     common.js                saf yardımcılar + event normalizasyonu
     match-analysis.js        buildMatchModel() — ortak analiz modeli
     utility-analysis.js      buildUtilityModel() — utility ekranının hesap katmanı
+    aim-analysis.js          buildAimModel() — aim ekranının hesap katmanı
   state/
     bus.js                   olay bus'ı
     demo-store.js            demo + analiz modeli cache'i
@@ -40,6 +41,8 @@ test/
   match-analysis.test.mjs
   utility-analysis.test.mjs
   utility-view.test.mjs      jsdom ile utility ekranı entegrasyonu
+  aim-analysis.test.mjs      aim metrikleri (geometri + fixture)
+  aim-view.test.mjs          jsdom ile aim ekranı entegrasyonu
   demo-worker.test.cjs
   dom-navigation.test.mjs
 
@@ -59,13 +62,14 @@ dev/preview.html             fixture veriyle çalışan geliştirme önizlemesi
 | 3 | Analysis MVP | ✅ Tamam | Özet kartları, takım karşılaştırması, oyuncu tablosu, round listesi, replay'e git |
 | 4 | Parser genişletmesi | ✅ Tamam | Yukarıdakilere ek olarak `item_purchase`, `player_spawn`, `player_team`, `player_disconnect`, `begin_new_match` ve `roundMeta[].freezeEndTick` eklendi |
 | 5 | Utility MVP | ✅ Tamam | `ui/analysis/utility-analysis.js` + utility ekranı (kartlar, radar overlay, oyuncu tablosu, olay listesi, replay bağlantısı) |
-| 6 | Aim MVP | ⬜ Sıradaki | Utility bitti; `aim-analysis.js` + aim ekranı + duel listesi |
-| 7 | Gelişmiş analiz | ⬜ Bekliyor | Heatmap, reaction-time tahmini, ekonomi, Ruby coaching |
+| 6 | Aim MVP | ✅ Tamam | `ui/analysis/aim-analysis.js` + aim ekranı (kartlar, ısı haritası, silah tablosu, düello listesi, replay) |
+| 7 | Gelişmiş analiz | ⬜ Sıradaki | Ekonomi ekranı, side split, momentum, maç heatmap, Ruby coaching |
 | 8 | Rust'a taşıma | ⬜ Bekliyor | Formüller doğrulandıktan sonra |
 
 Durum: Aşama 1-4 `main`'de, Windows build + release hattı çalışıyor
-(`v0.7.0-alpha.1-build.121`). Aşama 5 (hesap katmanı + ekran) bu dalda tamamlandı;
-78 test yeşil. Sıradaki: Aşama 6 Aim (`docs/ROADMAP-REMAINING.md` → Oturum C).
+(`v0.7.0-alpha.1-build.121`). Aşama 5 ve 6 (Utility + Aim, hesap katmanı ve ekranlar)
+bu dalda tamamlandı; 105 test yeşil. Sıradaki: Aşama 7 gelişmiş analiz
+(`docs/ROADMAP-REMAINING.md` → Oturum D).
 
 ## Bu turda yapılanlar
 
@@ -81,7 +85,7 @@ Durum: Aşama 1-4 `main`'de, Windows build + release hattı çalışıyor
 - **Testler**: 51 test (saf analiz, worker, jsdom entegrasyonu). `npm test`.
 - **Önizleme**: `npm run preview` → `dev/preview.html` (Electron gerekmez, fixture veriyle çalışır).
 
-## Bu turda yapılanlar (Aşama 4 kalanı + Aşama 5)
+## Bu turda yapılanlar (Aşama 4 kalanı + Aşama 5 + Aşama 6)
 
 - **Parser**: `item_purchase`, `player_spawn`, `player_team`, `player_disconnect`,
   `begin_new_match` eventleri `safeEventVariants` ile eklendi; `buildRoundMeta` artık her round
@@ -105,18 +109,29 @@ Durum: Aşama 1-4 `main`'de, Windows build + release hattı çalışıyor
 - **Eksik veri davranışı**: `player_blind` yoksa körlük sütunları/kartları, `player_hurt`
   yoksa hasar sütunları, tick state yoksa envanter sütunları gizlenir; sebebi "Veri durumu"
   bloğunda yazılır. Smoke süresi expire olmadan **tahmin edilmez** (kartta "—").
-- **Testler**: 78 test (13 utility hesap + 11 utility ekranı + 3 worker + 51 mevcut).
+- **Aim hesap katmanı**: `ui/analysis/aim-analysis.js` — `buildAimModel(model, { frames })`.
+  Silah bazında kill/HS/atış/isabet, accuracy (`bullet_impact` → en yakın önceki atışa
+  bağlanır), ortalama kill mesafesi, hareket halinde atış oranı (frame'lerden hız),
+  crosshair açı hatası (kamera yaw/pitch − hedef yönü) ve **potential reaction time**
+  (hedefin görüş konisine girdiği an → ilk atış). Eşikler yapılandırılabilir
+  (`config.crosshair`, `duelWindowSeconds`); veri yoksa metrik `null`.
+- **Aim ekranı**: `ui/views/aim-view.js` — round/oyuncu/taraf/silah filtreleri, özet
+  kartları, ısı haritası (isabet + kill noktaları, radar bileşeniyle), silah dağılımı
+  ve oyuncu tabloları, düello listesi (her satırda **Replay**). Eksik veride ilgili
+  kart/sütun gizlenir; "Doğruluk sınırları" bloğunda visibility uyarısı her zaman görünür.
+- **Fixture**: `test/fixtures/aim-duel.json` (bilinen geometri: 45° koni, 750 ms reaction,
+  5° crosshair hatası, hareket halinde atış) + builder'a kamera/konum track desteği.
+- **Testler**: 105 test (16 aim hesap + 11 aim ekranı + 13 utility hesap + 11 utility
+  ekranı + 3 worker + 51 mevcut).
 
 ## Sonraki oturum için giriş noktaları
 
-1. **Aim MVP (Aşama 6 / Oturum C)**: `ui/analysis/aim-analysis.js` + aim ekranı;
-   `weapon_fire` + `bullet_impact` + `player_hurt` eşleştirmesiyle crosshair açı hatası,
-   potential reaction time (visibility doğrulaması yok → etikette belirtilir), duel listesi
-   ve heatmap.
-2. **Gelişmiş analiz (Oturum D)**: ekonomi ekranı (round bazlı spend/buy), side split,
-   momentum grafiği, maç heatmap'i.
-3. **Ruby coaching (Oturum E)**: `backend/analytics/analyze.rb` çıktısının Analysis
-   ekranında gösterilmesi.
+1. **Gelişmiş analiz (Oturum D)**: ekonomi ekranı (round bazlı spend/buy, eco/full-buy
+   roundları), side split (T/CT ayrımı), momentum grafiği, maç heatmap'i.
+2. **Ruby coaching (Oturum E)**: `backend/analytics/analyze.rb` çıktısının Analysis
+   ekranında gösterilmesi + `backend/src/main.rs` IPC yolu.
+3. **Rust'a taşıma (Oturum E/F)**: formüller doğrulandıktan sonra model kurulumunu
+   Rust tarafına taşıma ve büyük demoda performans regresyon testi.
 
 ## Test komutları
 

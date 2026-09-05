@@ -50,6 +50,7 @@ function makeDemo(options = {}) {
     explosions: [],
     damage: options.omitDamage ? undefined : [],
     shots: options.omitShots ? undefined : [],
+    impacts: options.omitImpacts ? undefined : [],
     blinds: options.omitBlinds ? undefined : [],
     freezeEnds: [],
     bomb: null,
@@ -177,6 +178,20 @@ function makeDemo(options = {}) {
         user_name: actor.name,
         weapon: config.weapon || 'ak47',
         silenced: false
+      });
+      return api;
+    },
+
+    addImpact(config) {
+      if (!demo.impacts) return api;
+      const actor = api.actor(config.player || config.attacker);
+      demo.impacts.push({
+        tick: config.tick,
+        user_steamid: actor.steamid,
+        user_name: actor.name,
+        X: config.x != null ? config.x : 0,
+        Y: config.y != null ? config.y : 0,
+        Z: config.z != null ? config.z : 0
       });
       return api;
     },
@@ -311,6 +326,44 @@ function makeDemo(options = {}) {
       return api;
     },
 
+    /*
+     * Oyuncunun konum/kamera hareketini keyframe'lerle tanımlar (aim testleri için).
+     * setTrack(player, [{ tick, x, y, z, yaw, pitch }, ...])
+     */
+    setTrack(player, keyframes = []) {
+      const steamid = api.actor(player).steamid;
+      const target = api.players.find((candidate) => candidate.steamid === steamid);
+      if (target) target._track = [...keyframes].sort((a, b) => a.tick - b.tick);
+      return api;
+    },
+
+    /* Track'ten verilen tick için ara değer (linear interpolation). */
+    sampleTrack(player, tick) {
+      const track = player?._track;
+      if (!track || !track.length) return null;
+      if (tick <= track[0].tick) return { ...track[0] };
+      const last = track[track.length - 1];
+      if (tick >= last.tick) return { ...last };
+      for (let index = 1; index < track.length; index += 1) {
+        const previous = track[index - 1];
+        const next = track[index];
+        if (tick >= previous.tick && tick <= next.tick) {
+          const ratio = (tick - previous.tick) / ((next.tick - previous.tick) || 1);
+          const mix = (key, fallback = 0) => {
+            const from = previous[key] != null ? previous[key] : fallback;
+            const to = next[key] != null ? next[key] : from;
+            return from + (to - from) * ratio;
+          };
+          return {
+            tick,
+            x: mix('x'), y: mix('y'), z: mix('z'),
+            yaw: mix('yaw'), pitch: mix('pitch')
+          };
+        }
+      }
+      return { ...last };
+    },
+
     /* Sadece analiz için gereken alanları taşır; fixture boyutunu küçük tutar. */
     slimPlayer(player, index, state) {
       return {
@@ -320,6 +373,8 @@ function makeDemo(options = {}) {
         Y: state.Y,
         Z: state.Z,
         yaw: state.yaw,
+        pitch: state.pitch,
+        fov: 90,
         health: state.health,
         is_alive: state.is_alive,
         team_num: state.team_num,
@@ -336,31 +391,34 @@ function makeDemo(options = {}) {
       const lastTick = demo.maxTick;
       for (let tick = 0; tick <= lastTick; tick += step) {
         const meta = [...demo.roundMeta].reverse().find((round) => tick >= round.startTick) || demo.roundMeta[0];
-        const players = api.players.map((player, index) => ({
-          steamid: player.steamid,
-          name: player.name,
-          X: -800 + index * 160,
-          Y: -400 + (index % 3) * 120,
-          Z: 0,
-          pitch: 0,
-          yaw: (index * 37) % 360,
-          fov: 90,
-          duck_amount: 0,
-          in_crouch: false,
-          health: 100,
-          armor: 100,
-          is_alive: true,
-          team_num: TEAM_NUMBER[api.sideOf(player, meta.number)] || 0,
-          team_name: '',
-          team_clan_name: '',
-          player_color: '',
-          active_weapon_name: 'weapon_ak47',
-          active_weapon_ammo: 30,
-          total_ammo_left: 90,
-          flash_duration: 0,
-          inventory: player._inventory || [],
-          has_c4: false
-        }));
+        const players = api.players.map((player, index) => {
+          const sampled = api.sampleTrack(player, tick);
+          return {
+            steamid: player.steamid,
+            name: player.name,
+            X: sampled ? sampled.x : -800 + index * 160,
+            Y: sampled ? sampled.y : -400 + (index % 3) * 120,
+            Z: sampled ? sampled.z : 0,
+            pitch: sampled ? sampled.pitch : 0,
+            yaw: sampled ? sampled.yaw : (index * 37) % 360,
+            fov: 90,
+            duck_amount: 0,
+            in_crouch: false,
+            health: 100,
+            armor: 100,
+            is_alive: true,
+            team_num: TEAM_NUMBER[api.sideOf(player, meta.number)] || 0,
+            team_name: '',
+            team_clan_name: '',
+            player_color: '',
+            active_weapon_name: 'weapon_ak47',
+            active_weapon_ammo: 30,
+            total_ammo_left: 90,
+            flash_duration: 0,
+            inventory: player._inventory || [],
+            has_c4: false
+          };
+        });
         frames.push({ tick, players: options.slim ? players.map((state, i) => api.slimPlayer(api.players[i], i, state)) : players });
       }
       demo.frames = frames;

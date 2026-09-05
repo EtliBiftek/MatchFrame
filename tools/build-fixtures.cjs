@@ -346,10 +346,78 @@ function buildUtilityHeavy() {
   return builder.finalize();
 }
 
+/* ------------------------------------------------------------------ *
+ * 7) aim-duel — aim metrikleri için bilinen geometri
+ *
+ * Round 1: alpha (T) sabit, +X yönüne bakar (yaw 0). bravo (CT) y=-2000'dan
+ *          y=0'a yürür; 45° koniye tick ~152'de girer, alpha 200'de ateş eder
+ *          (reaksiyon 750 ms @64 tick) ve 240'ta HS kill alır.
+ * Round 2: charlie (T) hareket halinde (85 u/s) ve yaw'ı 5° kaymış şekilde
+ *          ateş eder; hedef zaten koni içinde olduğu için reaction "bilinmiyor".
+ * ------------------------------------------------------------------ */
+function buildAimDuel() {
+  const builder = makeDemo({
+    map: 'de_dust2',
+    server: 'Aim Test',
+    file: 'C:/demos/aim-duel.dem',
+    tickRate: 64,
+    players: [
+      { name: 'alpha', steamid: String(76561198000000001n), side: 'T' },
+      { name: 'bravo', steamid: String(76561198000000002n), side: 'CT' },
+      { name: 'charlie', steamid: String(76561198000000003n), side: 'T' },
+      { name: 'delta', steamid: String(76561198000000004n), side: 'CT' }
+    ]
+  });
+  const p = builder.players;
+
+  builder.setTrack(p[0], [
+    { tick: 0, x: 0, y: 0, z: 0, yaw: 0, pitch: 0 },
+    { tick: 2600, x: 0, y: 0, z: 0, yaw: 0, pitch: 0 }
+  ]);
+  builder.setTrack(p[1], [
+    { tick: 0, x: 1000, y: -2000, z: 0, yaw: 180, pitch: 0 },
+    { tick: 100, x: 1000, y: -2000, z: 0, yaw: 180, pitch: 0 },
+    { tick: 200, x: 1000, y: 0, z: 0, yaw: 180, pitch: 0 },
+    { tick: 2600, x: 1000, y: 0, z: 0, yaw: 180, pitch: 0 }
+  ]);
+  // charlie 2150-2400 arası yürür (~90 birim/s) ve yaw'ı 5° kayar (hareket halinde atış)
+  builder.setTrack(p[2], [
+    { tick: 0, x: 0, y: 500, z: 0, yaw: 0, pitch: 0 },
+    { tick: 2100, x: 0, y: 500, z: 0, yaw: 0, pitch: 0 },
+    { tick: 2150, x: 50, y: 500, z: 0, yaw: 5, pitch: 0 },
+    { tick: 2400, x: 400, y: 500, z: 0, yaw: 5, pitch: 0 },
+    { tick: 2600, x: 400, y: 500, z: 0, yaw: 5, pitch: 0 }
+  ]);
+  builder.setTrack(p[3], [
+    { tick: 0, x: 1500, y: 500, z: 0, yaw: 180, pitch: 0 },
+    { tick: 2600, x: 1500, y: 500, z: 0, yaw: 180, pitch: 0 }
+  ]);
+
+  // Round 1 — sabit nişancı, koniye giren hedef
+  builder.addRound({ startTick: 0, endTick: 1600, freezeTime: 64, winner: 'T', reason: 7 });
+  for (const tick of [200, 210, 220, 230]) builder.addShot({ tick, player: p[0], weapon: 'ak47' });
+  for (const tick of [200, 210, 220]) builder.addImpact({ tick, player: p[0], x: 1000, y: 0 });
+  builder.addDamage({ tick: 202, attacker: p[0], victim: p[1], weapon: 'ak47', damage: 27 });
+  builder.addDamage({ tick: 212, attacker: p[0], victim: p[1], weapon: 'ak47', damage: 58 });
+  builder.addKill({ tick: 240, attacker: p[0], victim: p[1], weapon: 'ak47', headshot: true });
+
+  // Round 2 — hareket halinde atış, 5° crosshair hatası, hedef zaten görünür
+  builder.addRound({ startTick: 1700, endTick: 2600, freezeTime: 64, winner: 'CT', reason: 7 });
+  builder.addShot({ tick: 2200, player: p[2], weapon: 'awp' });
+  builder.addShot({ tick: 2250, player: p[2], weapon: 'awp' });
+  builder.addImpact({ tick: 2200, player: p[2], x: 1500, y: 500 });
+  builder.addDamage({ tick: 2202, attacker: p[2], victim: p[3], weapon: 'awp', damage: 96 });
+  builder.addKill({ tick: 2260, attacker: p[2], victim: p[3], weapon: 'awp' });
+
+  builder.buildFrames(8, { slim: true });
+  return builder.finalize();
+}
+
 function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   write('basic-match', buildBasicMatch());
   write('utility-heavy', buildUtilityHeavy());
+  write('aim-duel', buildAimDuel());
   write('clutch-1v3', buildClutch());
   write('trade-scenario', buildTradeScenario());
   write('flash-assist', buildFlashAssist());

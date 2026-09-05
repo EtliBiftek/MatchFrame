@@ -260,6 +260,7 @@
   "explosions": [],
   "damage": [],
   "shots": [],
+  "impacts": [],
   "blinds": [],
   "freezeEnds": [],
   "bomb": {

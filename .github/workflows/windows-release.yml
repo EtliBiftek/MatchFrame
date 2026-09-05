@@ -66,6 +66,7 @@ jobs:
           node --check ui/analysis/common.js
           node --check ui/analysis/match-analysis.js
           node --check ui/analysis/utility-analysis.js
+          node --check ui/analysis/aim-analysis.js
           node --check ui/state/bus.js
           node --check ui/state/demo-store.js
           node --check ui/state/filter-store.js

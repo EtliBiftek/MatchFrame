@@ -108,7 +108,9 @@
       }
 
       for (const point of points) {
-        const style = KIND_STYLE[point.kind] || { color: '#9aa0a6', radius: 5, label: point.kind || '?' };
+        const base = KIND_STYLE[point.kind] || { color: '#9aa0a6', radius: 5, label: point.kind || '?' };
+        // Nokta bazında renk/yarıçap/label override (ısı haritası gibi özel kullanımlar)
+        const style = { ...base, ...(point.style || {}) };
         const projected = project(point);
         if (!projected) continue;
         const radius = style.radius;
@@ -148,12 +150,16 @@
 
     function renderLegend() {
       clear(legend);
-      const kinds = [...new Set(state.points.map((point) => point.kind))];
-      for (const kind of kinds) {
-        const style = KIND_STYLE[kind] || { color: '#9aa0a6', label: kind };
+      const seen = new Map();
+      for (const point of state.points) {
+        const style = { ...(KIND_STYLE[point.kind] || { color: '#9aa0a6', label: point.kind || '?' }), ...(point.style || {}) };
+        const label = style.label || point.kind || '?';
+        if (!seen.has(label)) seen.set(label, style.color);
+      }
+      for (const [label, color] of seen) {
         legend.appendChild(el('span', { class: 'radar-legend-item' }, [
-          el('i', { class: 'radar-dot', style: { background: style.color } }),
-          el('span', { text: style.label })
+          el('i', { class: 'radar-dot', style: { background: color } }),
+          el('span', { text: label })
         ]));
       }
     }

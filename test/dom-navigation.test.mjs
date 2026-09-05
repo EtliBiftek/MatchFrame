@@ -192,8 +192,12 @@ test('utility ekranı mevcut veriden özet üretir, aim ekranı veri durumunu li
 
   ui.go('aim');
   const aimView = ui.document.getElementById('view-aim');
-  const statuses = [...aimView.querySelectorAll('.data-table tbody tr')].map((row) => row.textContent);
-  assert.ok(statuses.some((row) => /player_hurt|weapon_fire|bullet_impact/.test(row)));
+  assert.ok(aimView.querySelectorAll('.stat-card').length >= 5, 'aim kartları eksik');
+  const tables = [...aimView.querySelectorAll('.data-table')];
+  assert.ok(tables.length >= 2, 'silah ve oyuncu tablosu yok');
+  assert.ok(tables[0].querySelectorAll('tbody tr').length >= 2, 'silah tablosu boş');
+  // Eksik veri (bullet_impact) doğruluk sınırları bloğunda açıklanır
+  assert.match(aimView.textContent, /bullet_impact|Visibility/);
   ui.close();
 });
 

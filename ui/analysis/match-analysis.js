@@ -318,6 +318,7 @@
     });
     const damage = sortByTick((demo.damage || []).map(normalizeHurtEvent));
     const shots = sortByTick((demo.shots || []).map(normalizeShotEvent));
+    const impacts = sortByTick((demo.impacts || []).map(common.normalizeImpactEvent));
     const blinds = sortByTick((demo.blinds || demo.utility?.playerBlinds || []).map(normalizeBlindEvent));
     const bombEvents = sortByTick([
       ...(demo.bomb?.plants || demo.plants || []).map((raw) => normalizeBombEvent(raw, 'bomb_planted')),
@@ -392,6 +393,7 @@
     assignRounds(kills, rounds);
     assignRounds(damage, rounds);
     assignRounds(shots, rounds);
+    assignRounds(impacts, rounds);
     assignRounds(blinds, rounds);
     assignRounds(bombEvents, rounds);
     assignRounds(utilityEvents, rounds);
@@ -858,7 +860,7 @@
         kills,
         damage,
         shots,
-        impacts: [],
+        impacts,
         utility: utilityEvents,
         blinds,
         bomb: bombEvents,

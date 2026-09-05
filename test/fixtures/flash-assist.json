@@ -147,6 +147,7 @@
   "explosions": [],
   "damage": [],
   "shots": [],
+  "impacts": [],
   "blinds": [
     {
       "tick": 640,

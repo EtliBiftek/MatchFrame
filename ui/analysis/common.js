@@ -479,6 +479,26 @@
     };
   }
 
+  /* bullet_impact: isabet noktası (weapon alanı genelde yoktur). */
+  function normalizeImpactEvent(raw) {
+    const actor = normalizeActor(raw, 'user', ['player']);
+    if (!actor.steamId) actor.steamId = normalizeSteamId(firstText(raw, ['steamid', 'player_steamid']));
+    if (!actor.name) actor.name = firstText(raw, ['name', 'player_name']);
+    const weapon = normalizeWeapon(firstText(raw, ['weapon', 'weapon_name', 'weapon_itemid']));
+    return {
+      type: 'impact',
+      tick: num(raw?.tick) ?? 0,
+      round: null,
+      roundIndex: -1,
+      actorSteamId: actor.steamId,
+      actorName: actor.name,
+      weapon: weapon.key === 'unknown' ? '' : weapon.key,
+      weaponLabel: weapon.key === 'unknown' ? '' : weapon.label,
+      position: actor.position || eventPosition(raw),
+      raw
+    };
+  }
+
   function normalizeBlindEvent(raw) {
     const victim = normalizeActor(raw, 'user', ['player']);
     if (!victim.steamId) victim.steamId = normalizeSteamId(firstText(raw, ['steamid', 'player_steamid']));
@@ -631,6 +651,7 @@
     normalizeBombEvent,
     normalizePurchaseEvent,
     normalizeActorEvent,
+    normalizeImpactEvent,
     utilityDamageKind,
     isUtilityWeapon,
     isUtilityThrowEvent,

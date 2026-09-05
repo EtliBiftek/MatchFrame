@@ -209,16 +209,17 @@ Yapılacaklar:
 
 ## Oturum planlaması
 
-> **Durum (2026-09-05):** Oturum A ve B tamamlandı. Aşama 4 ve 5 kod + testleri
-> `arena/01a06f0a-matchframe` dalında; `npm test` 78/78 yeşil.
-> Oturum B'nin Windows build'i, dal GitHub'a itildiğinde workflow tarafından alınacak
-> (sandbox ağ kısıtı nedeniyle push bekliyor).
+> **Durum (2026-09-05):** Oturum A, B ve C tamamlandı. Aşama 4, 5 ve 6 kod + testleri
+> `arena/01a06f0a-matchframe` dalında; `npm test` 105/105 yeşil.
+> Windows build'i, dal GitHub'a itildiğinde workflow tarafından alınacak; sandbox çıkışı
+> GitHub'a kapalı olduğu için push bekleniyor (her turda yeniden denenir).
+> Dalın kendisiyle taşınabilmesi için `matchframe-arena-session.bundle` dosyası üretildi.
 
 | Oturum | İş | Çıkış kriteri |
 | --- | --- | --- |
 | **A** | Aşama 4 tamamlama + `utility-analysis.js` (+ testler) | `availability.purchases` yeşil, utility metrikleri test edildi | ✅
 | **B** | Aşama 5 UI: utility ekranı + radar overlay + replay bağlantıları | Round bazında utility incelenebiliyor, build alındı | ✅ (bu dalda, 78 test) |
-| **C** | Aşama 6: `aim-analysis.js` + aim ekranı + duel listesi + heatmap | Aim metrikleri açıklanabilir ve olaya geri bağlanabiliyor |
+| **C** | Aşama 6: `aim-analysis.js` + aim ekranı + duel listesi + heatmap | Aim metrikleri açıklanabilir ve olaya geri bağlanabiliyor | ✅ (bu dalda, 105 test) |
 | **D** | Aşama 7.1: ekonomi, side split, momentum grafiği, maç heatmap | Analysis ikinci sürüm tamam |
 | **E** | Aşama 7.2 + 8: Ruby coaching + Rust'a taşıma + regresyon/perf | Koçluk notları görünüyor, büyük demoda playback düşüşü yok |
 | **F** | Sürüm finalizasyonu: `0.7.0-alpha.1` + tüm testler + build/release | Portable + NSIS EXE yayınlandı |
