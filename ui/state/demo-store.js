@@ -41,6 +41,9 @@
     return model;
   }
 
+  /* Rust karşılaştırma durumu (yalnızca köprü açıkken dolar). */
+  let rustParity = null;
+
   const store = {
     getState() {
       return state;
@@ -65,6 +68,7 @@
         cacheKey = key;
         buildModel(demo);
       }
+      if (state.model) runRustParity(demo, state.model);
       bus.emit('demo:changed', { demo, model: state.model });
       notify();
       return state.model;
@@ -82,6 +86,7 @@
 
     clear() {
       state.status = 'empty';
+      rustParity = null;
       state.demo = null;
       state.model = null;
       state.file = null;
@@ -95,8 +100,75 @@
       if (typeof listener !== 'function') return () => {};
       listeners.add(listener);
       return () => listeners.delete(listener);
-    }
+    },
+
+    /* Rust modeliyle karşılaştırma sonucu (yalnızca köprü açıkken dolar). */
+    getRustParity() { return rustParity; }
   };
+
+  /*
+   * Aşama 8 — Rust modeliyle gölge karşılaştırma.
+   *
+   * Varsayılan kapalı (localStorage 'mf.rustModel'). Açıkken JS modeli her
+   * zamanki gibi kaynak doğrudur; Rust modeli yalnızca aynı sayıları üretiyor
+   * mu diye karşılaştırılır. Sonuç `getRustParity()` ve 'analysis:rust' olayı
+   * ile yayınlanır; UI bu yüzden asla Rust'a bağımlı değildir.
+   */
+  function compareWithRust(jsModel, rustModel) {
+    const mismatches = [];
+    let checked = 0;
+    const push = (field, jsValue, rustValue) => {
+      if (Math.abs(Number(jsValue || 0) - Number(rustValue || 0)) > 1) {
+        mismatches.push({ field, js: jsValue, rust: rustValue });
+      }
+      checked += 1;
+    };
+
+    push('rounds.length', jsModel.rounds.length, (rustModel.rounds || []).length);
+    (rustModel.rounds || []).forEach((round, index) => {
+      const jsRound = jsModel.rounds[index];
+      if (!jsRound) return;
+      push(`round[${index}].kills`, (jsRound.kills || []).length, round.kills);
+      const damage = (jsRound.damage || []).reduce((total, event) => total + (Number(event.damage) || 0), 0);
+      push(`round[${index}].damage`, Math.round(damage), Math.round(round.damage || 0));
+    });
+
+    for (const player of rustModel.players || []) {
+      const jsPlayer = jsModel.players?.[player.steamId];
+      if (!jsPlayer) {
+        mismatches.push({ field: `player.${player.steamId}`, js: null, rust: player.steamId });
+        continue;
+      }
+      push(`${player.name}.kills`, jsPlayer.totals.kills, player.totals?.kills);
+      push(`${player.name}.deaths`, jsPlayer.totals.deaths, player.totals?.deaths);
+      push(`${player.name}.damage`, jsPlayer.totals.damage, player.totals?.damage);
+    }
+
+    return {
+      ok: mismatches.length === 0,
+      checked,
+      mismatches: mismatches.slice(0, 20),
+      engine: rustModel.engine || 'rust',
+      deferred: rustModel.coverage?.deferred || []
+    };
+  }
+
+  function runRustParity(demo, model) {
+    const bridge = ns.analysis?.rustBridge;
+    if (!bridge || typeof bridge.isEnabled !== 'function' || !bridge.isEnabled()) return;
+    rustParity = { pending: true };
+    Promise.resolve(bridge.buildModel(demo))
+      .then((result) => {
+        rustParity = result.ok
+          ? compareWithRust(model, result.model)
+          : { ok: false, checked: 0, mismatches: [], message: result.message };
+        bus.emit('analysis:rust', rustParity);
+      })
+      .catch((error) => {
+        rustParity = { ok: false, checked: 0, mismatches: [], message: String(error?.message || error) };
+        bus.emit('analysis:rust', rustParity);
+      });
+  }
 
   function notify() {
     for (const listener of [...listeners]) {

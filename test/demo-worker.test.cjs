@@ -72,7 +72,19 @@ function runWorker(options = {}) {
         flashbang_detonate: [],
         player_blind: [],
         decoy_started: [],
-        decoy_detonate: []
+        decoy_detonate: [],
+        item_purchase: [{
+          tick: 1050,
+          user_steamid: '76561198000000001',
+          user_name: 'alpha',
+          weapon: 'ak47',
+          cost: 2700,
+          team: 2
+        }],
+        player_spawn: [{ tick: 1010, user_steamid: '76561198000000001', user_name: 'alpha', team_num: 2 }],
+        player_team: [{ tick: 1005, user_steamid: '76561198000000002', user_name: 'bravo', team: 3, oldteam: 2 }],
+        player_disconnect: [{ tick: 1800, user_steamid: '76561198000000002', user_name: 'bravo' }],
+        begin_new_match: [{ tick: 500, map: 'de_mirage' }]
       };
       return rows[name] || [];
     },
@@ -147,9 +159,17 @@ test('worker yeni eventleri ve eventStatus raporunu üretir', () => {
   assert.equal(done[0].ok, true);
 
   const data = done[0].data;
-  for (const key of ['deaths', 'damage', 'shots', 'impacts', 'freezeEnds', 'roundEnds', 'eventStatus', 'blinds']) {
+  for (const key of ['deaths', 'damage', 'shots', 'impacts', 'freezeEnds', 'roundEnds', 'eventStatus', 'blinds',
+    'purchases', 'spawns', 'teamChanges', 'disconnects', 'matchStarts']) {
     assert.ok(key in data, `çıktıda ${key} yok`);
   }
+  assert.equal(data.purchases.length, 1);
+  assert.equal(data.spawns.length, 1);
+  assert.equal(data.teamChanges.length, 1);
+  assert.equal(data.disconnects.length, 1);
+  assert.equal(data.matchStarts.length, 1);
+  assert.equal(data.eventStatus.item_purchase.ok, true);
+  assert.equal(data.eventStatus.player_disconnect.ok, true);
   assert.equal(data.damage.length, 1);
   assert.equal(data.shots.length, 1);
   assert.equal(data.impacts.length, 1);
@@ -158,6 +178,37 @@ test('worker yeni eventleri ve eventStatus raporunu üretir', () => {
   assert.equal(data.eventStatus.player_death.ok, true);
   assert.equal(data.eventStatus.round_end.ok, true);
   assert.equal(data.eventStatus.round_end.variant, 0, 'genişletilmiş round_end varyantı kullanılmalı');
+});
+
+test('round_freeze_end round meta içinde freezeEndTick olarak taşınır', () => {
+  const data = runWorker().filter((message) => message.type !== 'progress')[0].data;
+  assert.equal(data.roundMeta.length, 1);
+  assert.equal(data.roundMeta[0].startTick, 1000);
+  assert.equal(data.roundMeta[0].freezeEndTick, 1100, 'freeze bitişi round başlangıcından sonra gelmeli');
+  assert.equal(data.roundMeta[0].endTick, 2000);
+
+  const model = analysis.buildMatchModel({ ...data, file: 'test.dem' });
+  assert.equal(model.rounds[0].freezeEndTick, 1100);
+  assert.equal(model.rounds[0].jumpTick, 1100, 'replay hedefi freeze bitişi olmalı');
+});
+
+test('satın alma verisi modele ekonomi olarak yansır', () => {
+  const data = runWorker().filter((message) => message.type !== 'progress')[0].data;
+  const model = analysis.buildMatchModel({ ...data, file: 'test.dem' });
+  assert.equal(model.availability.purchases.available, true);
+  assert.equal(model.rounds[0].economy.spend, 2700);
+  assert.equal(model.rounds[0].economy.buys, 1);
+  assert.equal(model.players['76561198000000001'].totals.economy.spend, 2700);
+  assert.equal(model.players['76561198000000002'].disconnected, true, 'disconnect bayrağı işaretlenmeli');
+});
+
+test('item_purchase parse edilemezse ekonomi unavailable kalır', () => {
+  const data = runWorker({ fail: ['item_purchase'] }).filter((message) => message.type !== 'progress')[0].data;
+  assert.equal(data.purchases.length, 0);
+  assert.equal(data.eventStatus.item_purchase.ok, false);
+  const model = analysis.buildMatchModel({ ...data, file: 'test.dem' });
+  assert.equal(model.availability.purchases.available, false);
+  assert.equal(model.rounds[0].economy.spend, 0);
 });
 
 test('worker ilerleme bildirimleri gönderir', () => {

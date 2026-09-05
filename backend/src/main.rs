@@ -4,6 +4,26 @@ use std::ffi::CStr;
 use std::io::{self, BufRead, Write};
 use std::process::{Command, Stdio};
 
+// Aşama 8: Rust analiz motoru yalnızca analysis-rs özelliği ile derlenir.
+#[cfg(feature = "analysis-rs")]
+mod analysis;
+
+#[cfg(feature = "analysis-rs")]
+fn analysis_build(id: u64, payload: &Value) -> Response {
+    match analysis::build(payload) {
+        Ok(data) => ok(id, "Analysis model built in Rust", data),
+        Err(error) => err(id, error),
+    }
+}
+
+#[cfg(not(feature = "analysis-rs"))]
+fn analysis_build(id: u64, _payload: &Value) -> Response {
+    err(
+        id,
+        "analysis_build requires the analysis-rs feature (cargo build --features analysis-rs)",
+    )
+}
+
 unsafe extern "C" {
     fn mf_cs2_running() -> i32;
     fn mf_send_console_command(command: *const u8, length: usize) -> i32;
@@ -72,7 +92,8 @@ fn handle(req: Request) -> Response {
                 "rust": true,
                 "cpp_native": native_version(),
                 "assembly_probe": probe,
-                "ruby_engine": "analytics/analyze.rb"
+                "ruby_engine": "analytics/analyze.rb",
+                "analysis_rs": cfg!(feature = "analysis-rs")
             }))
         }
         "cs2_status" => {
@@ -91,6 +112,7 @@ fn handle(req: Request) -> Response {
             let value = req.payload.get("value").and_then(Value::as_i64).unwrap_or(0) as i32;
             ok(req.id, "Assembly helper executed", json!({"value": unsafe { mf_native_abs_probe(value) }}))
         }
+        "analysis_build" => analysis_build(req.id, &req.payload),
         "ruby_analyze" => match run_ruby(&req.payload) {
             Ok(data) => ok(req.id, "Ruby analysis complete", data),
             Err(error) => err(req.id, error)

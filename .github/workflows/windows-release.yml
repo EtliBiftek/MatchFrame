@@ -3,6 +3,10 @@ name: Windows Build & Release
 on:
   push:
     branches: [main, 'arena/**']
+    # Dokümantasyon commit'leri release build'i tetiklemesin.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
@@ -61,6 +65,11 @@ jobs:
           node --check ui/enhance.js
           node --check ui/analysis/common.js
           node --check ui/analysis/match-analysis.js
+          node --check ui/analysis/utility-analysis.js
+          node --check ui/analysis/aim-analysis.js
+          node --check ui/analysis/advanced-analysis.js
+          node --check ui/analysis/coaching.js
+          node --check ui/analysis/rust-bridge.js
           node --check ui/state/bus.js
           node --check ui/state/demo-store.js
           node --check ui/state/filter-store.js
@@ -70,6 +79,9 @@ jobs:
           node --check ui/components/empty-state.js
           node --check ui/components/filters.js
           node --check ui/components/event-list.js
+          node --check ui/components/radar.js
+          node --check ui/components/chart.js
+          node --check ui/components/coach-notes.js
           node --check ui/views/replay-view.js
           node --check ui/views/analysis-view.js
           node --check ui/views/aim-view.js
@@ -87,7 +99,14 @@ jobs:
 
       - name: Build native backend
         shell: pwsh
-        run: cargo build --manifest-path backend/Cargo.toml --release --target x86_64-pc-windows-msvc
+        env:
+          # Aşama 8 Rust analiz motoru (analysis.rs) varsayılan olarak DERLENMEZ.
+          # Denemek için workflow_dispatch ile MF_RUST_FEATURES=analysis-rs verin.
+          MF_RUST_FEATURES: ''
+        run: |
+          $features = @()
+          if ($env:MF_RUST_FEATURES) { $features = @('--features', $env:MF_RUST_FEATURES) }
+          cargo build --manifest-path backend/Cargo.toml --release --target x86_64-pc-windows-msvc @features
 
       - name: Stage backend for Electron
         shell: pwsh

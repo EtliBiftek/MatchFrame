@@ -38,12 +38,38 @@ The left rail switches between four screens:
 - **Replay** — radar timeline, POV and voice (existing pipeline).
 - **Analysis** — match summary: score/rounds, team comparison, player table (K/D/A, ADR,
   HS%, entry, trade, flash assist, clutch), round list and per-event jump back to replay.
-- **Aim** — planned for stage 6 (`player_hurt` / `weapon_fire` / `bullet_impact` metrics).
-- **Utility** — grenade usage preview now, full module in stage 5.
+  Plus stage 7.1 blocks: **economy** (`item_purchase`), **T/CT side split**, **round
+  momentum chart**, **match heatmap** and **opening duels**.
+- **Aim** — crosshair error, potential reaction time, moving-shot rate, kill distance,
+  per-weapon table and duel list with replay jump (`player_hurt` / `weapon_fire` /
+  `bullet_impact` / tick state).
+- **Utility** — grenade counts, blind effect, smoke/molotov coverage, radar overlay with a
+  round timeline and an event list.
 
 A single analysis model is built once per demo (`buildMatchModel`) and shared by all
 screens. Missing parser data is reported explicitly instead of showing fabricated numbers.
 See `docs/ANALYSIS-MODEL.md` and `docs/LEFT-PANEL-MODULES.md`.
+
+### Coaching notes (Ruby)
+
+The **Koçluk notları** block sends normalized metrics to `backend/analytics/analyze.rb`
+through the Rust core (`ruby_analyze`). Notes are categorized (`aim`, `utility`, `entry`,
+`economy`, `positioning`) and shown on the matching screen. If Ruby is missing or fails,
+the screens keep working and only a status note is displayed — no fabricated advice.
+
+### Rust analysis engine (optional, stage 8)
+
+`backend/src/analysis.rs` recomputes the event-derived part of the model (round/player/team
+kills, deaths, damage, ADR, headshots). It is **not compiled by default**:
+
+```powershell
+npm run build:backend:analysis       # cargo build --release --features analysis-rs
+$env:MF_CORE_BIN = "backend\target\release\matchframe-core.exe"
+npm run test:rust-parity             # JS model vs Rust model
+```
+
+While the feature is off, `analysis_build` returns an explanatory error and the app keeps
+using the JS model.
 
 ## Development
 
@@ -56,7 +82,9 @@ npm start
 Tests and browser preview:
 
 ```powershell
-npm test              # analysis, demo-worker and jsdom UI tests
+npm test              # analysis, coaching, demo-worker and jsdom UI tests
+npm run test:ruby     # Ruby rule engine tests (skipped when `ruby` is not installed)
+npm run test:rust-parity  # JS <-> Rust model parity (skipped without MF_CORE_BIN)
 npm run fixtures      # regenerate anonymized JSON demo fixtures
 npm run preview       # Electron-free preview at http://localhost:5173/dev/preview.html
 ```
