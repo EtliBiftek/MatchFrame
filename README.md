@@ -31,12 +31,34 @@ Powered by [Source 2 Viewer](https://s2v.app) ([ValveResourceFormat](https://git
 
 The `.dem` file itself is not a video. Offline POV is reconstructed from the demo camera/player state plus the Source 2 map resources already installed with CS2. The first time a map is opened in Offline POV, MatchFrame downloads a pinned Source 2 Viewer CLI release, verifies its SHA-256, exports the map to the user cache, then reuses that cache on later launches. `cs2.exe` is not started for this mode.
 
+## Analysis panels
+
+The left rail switches between four screens:
+
+- **Replay** — radar timeline, POV and voice (existing pipeline).
+- **Analysis** — match summary: score/rounds, team comparison, player table (K/D/A, ADR,
+  HS%, entry, trade, flash assist, clutch), round list and per-event jump back to replay.
+- **Aim** — planned for stage 6 (`player_hurt` / `weapon_fire` / `bullet_impact` metrics).
+- **Utility** — grenade usage preview now, full module in stage 5.
+
+A single analysis model is built once per demo (`buildMatchModel`) and shared by all
+screens. Missing parser data is reported explicitly instead of showing fabricated numbers.
+See `docs/ANALYSIS-MODEL.md` and `docs/LEFT-PANEL-MODULES.md`.
+
 ## Development
 
 ```powershell
 npm install
 npm run build:backend
 npm start
+```
+
+Tests and browser preview:
+
+```powershell
+npm test              # analysis, demo-worker and jsdom UI tests
+npm run fixtures      # regenerate anonymized JSON demo fixtures
+npm run preview       # Electron-free preview at http://localhost:5173/dev/preview.html
 ```
 
 ## Windows build

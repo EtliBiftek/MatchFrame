@@ -1,12 +1,16 @@
 {
   "name": "matchframe",
-  "version": "0.4.8",
+  "version": "0.7.0-alpha.1",
   "description": "CS2 demo POV viewer, timeline workstation and match analysis desktop app",
   "main": "electron/bootstrap.cjs",
   "author": "EtliBiftek",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
+    "test": "node --test \"test/**/*.test.mjs\" \"test/**/*.test.cjs\"",
+    "test:analysis": "node --test \"test/analysis-common.test.mjs\" \"test/match-analysis.test.mjs\"",
+    "fixtures": "node tools/build-fixtures.cjs",
+    "preview": "node tools/serve-preview.cjs",
     "build:backend": "cargo build --manifest-path backend/Cargo.toml --release",
     "dist": "electron-builder --win portable nsis --x64 --publish never",
     "dist:dir": "electron-builder --dir --win --x64"
@@ -18,7 +22,8 @@
   },
   "devDependencies": {
     "electron": "44.2.0",
-    "electron-builder": "26.16.0"
+    "electron-builder": "26.16.0",
+    "jsdom": "^30.0.1"
   },
   "build": {
     "appId": "dev.matchframe.app",
@@ -47,7 +52,10 @@
       "output": "dist"
     },
     "win": {
-      "target": ["portable", "nsis"]
+      "target": [
+        "portable",
+        "nsis"
+      ]
     },
     "portable": {
       "artifactName": "MatchFrame-${version}-Portable.${ext}"
